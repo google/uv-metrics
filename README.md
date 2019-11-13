@@ -1,6 +1,6 @@
 # UV
 
-UV is Blueshift's shared research codebase.
+UV is Blueshift's shared research codebase. Get excited!
 
 ## Installing UV
 
