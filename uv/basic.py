@@ -1,4 +1,6 @@
-"""Basic namespace, just to test things out."""
+"""Basic namespace, just to test things out.
+
+"""
 
 
 def cake_squared(i):
