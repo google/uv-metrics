@@ -1,0 +1,2 @@
+include versioneer.py
+include uv/_version.py
