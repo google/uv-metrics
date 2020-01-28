@@ -1,6 +1,7 @@
 import unittest
 import uv.basic as b
 
+
 class BasicTestSuite(unittest.TestCase):
   """Basic test cases."""
 
@@ -9,6 +10,7 @@ class BasicTestSuite(unittest.TestCase):
 
   def test_cake_squared(self):
     assert b.cake_squared(10) == 100
+
 
 if __name__ == '__main__':
   unittest.main()
