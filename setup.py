@@ -16,7 +16,8 @@ versioneer if available; else, returns the default.
     return default
 
 
-REQUIRED_PACKAGES = []
+REQUIRED_PACKAGES = ["numpy>=1.18.0", "tqdm>=4.42.1"]
+
 setup(
     name='uv',
     version=with_versioneer(lambda v: v.get_version()),

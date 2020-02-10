@@ -18,6 +18,27 @@ repo URL:
 pip install -e git+sso://team/blueshift/uv@sritchie/add_notes#egg=uv
 ```
 
+This works too, using artifactory:
+
+```bash
+pip install uv --extra-index-url https://artifactory2.nestlabs.com/artifactory/api/pypi/pypi-local/simple
+```
+
+OR, you can add this to `~/.pip/pip.conf`:
+
+```yaml
+[global]
+extra-index-url = https://artifactory2.nestlabs.com/artifactory/api/pypi/pypi-local/simple
+```
+
+And then this will work:
+
+```
+pip install uv
+```
+
+## Installing Inside Docker
+
 # Getting Started
 
 What lives here?
@@ -59,6 +80,14 @@ Run this to get all of the nice language-checking goodies.
 ```sh
 pip install 'python-language-server[all]'
 ```
+
+## Publishing
+
+We do this via artifactory.
+
+https://artifactory2.nestlabs.com/artifactory/webapp/#/home
+
+using the info at [this guide](http://go/nest-pypi-local#package-maintainers).
 
 ## Trouble?
 

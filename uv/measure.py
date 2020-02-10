@@ -1,3 +1,0 @@
-"""Beginning the measurement code.
-
-"""
