@@ -1,16 +1,10 @@
 """Tests of the various reporter base implementations, plus combinators."""
 
-from typing import Dict, List
-
-import hypothesis.strategies as st
-from hypothesis import given
 import itertools
 
 import pytest
 import uv.reporter.base as b
 import uv.reporter.store as r
-import uv.types as t
-import uv.util.prefix as p
 
 
 @pytest.fixture
@@ -123,29 +117,49 @@ def test_filter_step(mem):
     ThrowCloseReporter().filter_step(lambda step: True).close()
 
 
-def test_mapv(mem):
-  squared = mem.mapv(lambda v: v * v)
-  reader = mem.reader()
+def test_filter_values(mem):
+  on_false = r.MemoryReporter()
 
-  squared.report(2, "a", 2)
-  squared.report_all(3, {"b": 1, "c": 7})
+  step_plus_v_even = mem.filter_values(lambda step, v: (step + v) % 2 == 0,
+                                       on_false=on_false)
+  reader = step_plus_v_even.reader()
 
-  # all of the reported values, when reported through the squared reporter...
-  # are squared.
-  assert reader.read_all(["a", "b", "c", "d"]) == {
-      "a": [4],
-      "b": [1],
-      "c": [49],
-      "d": []
+  step_plus_v_even.report(0, "a", 0)
+  step_plus_v_even.report(1, "a", 4)
+  step_plus_v_even.report(2, "a", 2)
+  step_plus_v_even.report(3, "a", 2)
+
+  step_plus_v_even.report_all(3, {"b": 1, "c": 2})
+  step_plus_v_even.report_all(4, {"b": 2, "c": 4})
+
+  # only the items written where the step PLUS the value is even above should
+  # get through.
+  assert reader.read_all(["a", "b", "c"]) == {
+      "a": [0, 2],
+      "b": [1, 2],
+      "c": [4]
+  }
+
+  # every time the predicate returned false, items went into the other store.
+  assert on_false.reader().read_all(["a", "b", "c"]) == {
+      "a": [4, 2],
+      "b": [],
+      "c": [2]
   }
 
   # check that the close is passthrough:
   with pytest.raises(IOError):
-    ThrowCloseReporter().mapv(lambda v: v).close()
+    ThrowCloseReporter().filter_values(lambda step: True).close()
+
+  # check that the close is passthrough for the on_false reporter:
+  with pytest.raises(IOError):
+    r.MemoryReporter().filter_values(lambda step: True,
+                                     on_false=ThrowCloseReporter()).close()
 
 
-def test_map_stepv(mem):
-  squared_if_even = mem.map_stepv(lambda step, v: v * v if step % 2 == 0 else v)
+def test_map_values(mem):
+  squared_if_even = mem.map_values(lambda step, v: v * v
+                                   if step % 2 == 0 else v)
   reader = mem.reader()
 
   squared_if_even.report(2, "a", 2)
@@ -162,7 +176,7 @@ def test_map_stepv(mem):
 
   # check that the close is passthrough:
   with pytest.raises(IOError):
-    ThrowCloseReporter().map_stepv(lambda step, v: v).close()
+    ThrowCloseReporter().map_values(lambda step, v: v).close()
 
 
 def test_stepped(mem):

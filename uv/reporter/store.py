@@ -5,7 +5,7 @@ metrics into underlying store or mechanism.
 """
 
 import sys
-from typing import Any, Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 import uv.reader.base as rb
 import uv.reader.store as rs

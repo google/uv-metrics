@@ -5,7 +5,7 @@ reporters together into compound reporters.
 from __future__ import annotations
 
 from abc import ABCMeta
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional
 
 import uv.reader.base as rb
 import uv.types as t
@@ -91,16 +91,23 @@ class AbstractReporter(metaclass=ABCMeta):
     items are routes to that store instead of base.
 
     """
-    return FilterReporter(self, pred, on_false_reporter=on_false)
 
-  def mapv(self, fn: Callable[[t.Metric], t.Metric]):
-    """"Accepts a function that acts on metrics seen via report and report_all
-    before passing the result of the fn down to this reporter instance.
+    def step_pred(step, _):
+      return pred(step)
+
+    return FilterValuesReporter(self, step_pred, on_false_reporter=on_false)
+
+  def filter_values(self,
+                    pred: Callable[[int, t.Metric], bool],
+                    on_false: Optional[AbstractReporter] = None):
+    """"Accepts a function from (step, metric) to boolean; every (step, metric)
+    pair passed to report and report_all are passed into this function. If the
+    predicate returns true, the metric is passed on; else, it's filtered.
 
     """
-    return self.map_stepv(lambda _, v: fn(v))
+    return FilterValuesReporter(self, pred, on_false_reporter=on_false)
 
-  def map_stepv(self, fn: Callable[[int, t.Metric], t.Metric]):
+  def map_values(self, fn: Callable[[int, t.Metric], t.Metric]):
     """"Accepts a function from (step, metric) to some new metric; every (step,
     metric) pair passed to report and report_all are passed into this function,
     and the result is passed down the chain to this, the calling reporter.
@@ -154,38 +161,37 @@ def stepped_reporter(base: AbstractReporter,
   return MapValuesReporter(base, _augment)
 
 
-class FilterReporter(AbstractReporter):
-  """Reporter that uses a supplied predicate on incoming steps to choose whether
-  or not to pass metrics on to an underlying store.
-
-  The reader always queries the base store, not the on_false_reporter.
+class FilterValuesReporter(AbstractReporter):
+  """Reporter that filters incoming metrics by applying a predicate from (step,
+  t.Metric). If true, the reporter passes the result on to the underlying
+  reporter. Else, nothing.
 
   Args:
     base: Backing reporter. All report and report_all calls proxy here.
-    predicate: function from step to bool. If true, passes on metrics. If
-    false, swallows them.
-    on_false_reporter: if supplied, this reporter receives items for which the
-    predicate returns false.
+    predicate: function from (step, metric) to metric.
 
   """
 
   def __init__(self,
                base: AbstractReporter,
-               predicate: Callable[[int], bool],
+               predicate: Callable[[int, t.Metric], bool],
                on_false_reporter: Optional[AbstractReporter] = None):
     self._base = base
     self._pred = predicate
     self._on_false_reporter = on_false_reporter
 
-  def report_all(self, step: int, m: Dict[str, Any]) -> None:
-    if self._pred(step):
-      self._base.report_all(step, m)
+  def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
+    good = {k: v for k, v in m.items() if self._pred(step, v)}
+    bad = {k: v for k, v in m.items() if not self._pred(step, v)}
 
-    elif self._on_false_reporter:
-      self._on_false_reporter.report_all(step, m)
+    if good:
+      self._base.report_all(step, good)
 
-  def report(self, step: int, k: str, v: Any) -> None:
-    if self._pred(step):
+    if self._on_false_reporter and bad:
+      self._on_false_reporter.report_all(step, bad)
+
+  def report(self, step: int, k: t.MetricKey, v: t.Metric) -> None:
+    if self._pred(step, v):
       self._base.report(step, k, v)
 
     elif self._on_false_reporter:
@@ -196,6 +202,9 @@ class FilterReporter(AbstractReporter):
 
   def close(self) -> None:
     self._base.close()
+
+    if self._on_false_reporter:
+      self._on_false_reporter.close()
 
 
 class MapValuesReporter(AbstractReporter):
@@ -214,10 +223,10 @@ class MapValuesReporter(AbstractReporter):
     self._base = base
     self._fn = fn
 
-  def report_all(self, step: int, m: Dict[str, Any]) -> None:
+  def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
     self._base.report_all(step, {k: self._fn(step, v) for k, v in m.items()})
 
-  def report(self, step: int, k: str, v: Any) -> None:
+  def report(self, step: int, k: t.MetricKey, v: t.Metric) -> None:
     self._base.report(step, k, self._fn(step, v))
 
   def reader(self) -> Optional[rb.AbstractReader]:
@@ -240,11 +249,11 @@ class MultiReporter(AbstractReporter):
   def __init__(self, *reporters: AbstractReporter):
     self._reporters = reporters
 
-  def report_all(self, step: int, m: Dict[str, Any]) -> None:
+  def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
     for r in self._reporters:
       r.report_all(step, m)
 
-  def report(self, step: int, k: str, v: Any) -> None:
+  def report(self, step: int, k: t.MetricKey, v: t.Metric) -> None:
     for r in self._reporters:
       r.report(step, k, v)
 
@@ -267,10 +276,10 @@ class PrefixedReporter(AbstractReporter):
     self._base = base
     self._prefix = prefix
 
-  def report_all(self, step: int, m: Dict[str, Any]) -> None:
+  def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
     self._base.report_all(step, p.attach(m, self._prefix))
 
-  def report(self, step: int, k: str, v: Any) -> None:
+  def report(self, step: int, k: t.MetricKey, v: t.Metric) -> None:
     newk = p.attach_s(k, self._prefix)
     self._base.report(step, newk, v)
 
@@ -299,10 +308,10 @@ class ThunkReporter(AbstractReporter):
   def thunk(self, step: int) -> None:
     self.report_all(step, self._thunk())
 
-  def report_all(self, step: int, m: Dict[str, Any]) -> None:
+  def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
     self._base.report_all(step, m)
 
-  def report(self, step: int, k: str, v: Any) -> None:
+  def report(self, step: int, k: t.MetricKey, v: t.Metric) -> None:
     self._base.report(step, k, v)
 
   def reader(self) -> Optional[rb.AbstractReader]:

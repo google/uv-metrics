@@ -11,9 +11,6 @@ import tqdm
 
 def to_metric(v: Any) -> float:
   """Converts the incoming item into something we can log.
-
-  TODO convert this to a to_serializable instance if tensorflow is present.
-
   """
   if hasattr(v, 'numpy'):
     return v.numpy()
@@ -24,13 +21,29 @@ def to_metric(v: Any) -> float:
 @singledispatch
 def to_serializable(val):
   """Used by default."""
+
+  if hasattr(val, 'numpy'):
+    return val.numpy()
+
   return str(val)
 
 
-@to_serializable.register(np.float32)
-def ts_float32(val):
-  """Used if *val* is an instance of numpy.float32."""
-  return np.float64(val)
+@to_serializable.register(np.floating)
+def ts_np_floating(val):
+  """Used if *val* is an instance of numpy.floating."""
+  return float(val)
+
+
+@to_serializable.register(np.integer)
+def ts_np_int(val):
+  """Used if *val* is an instance of numpy.integer."""
+  return int(val)
+
+
+@to_serializable.register(np.ndarray)
+def ts_np_array(val):
+  """Convert a numpy array to a serializable list."""
+  return val.tolist()
 
 
 def json_str(item: Any) -> str:

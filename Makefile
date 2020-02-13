@@ -39,7 +39,7 @@ clean-files:
 install:
 	rm -rf $(ENV_NAME)
 	virtualenv --no-site-packages $(ENV_NAME)
-	$(PIP) install -r requirements-dev.txt && $(PIP) install -e .
+	$(PIP) install -r requirements-dev.txt && $(PIP) install -e .[all]
 
 .PHONY: test
 test: lint pytest

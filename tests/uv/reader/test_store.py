@@ -20,6 +20,9 @@ def test_memory_rt(step, m):
   expected = {k: [{"step": step, "value": v}] for k, v in m.items()}
   assert reader.read_all(m.keys()) == expected
 
+  # The reader only knows about items from the input map.
+  assert reader.keys() == m.keys()
+
 
 @given(st.sets(st.text(min_size=1)))
 def test_memory_empty(ks):
@@ -33,6 +36,9 @@ def test_memory_empty(ks):
   # same works for read implementation:
   for k in ks:
     assert reader.read(k) == []
+
+  # no keys available from an empty reader.
+  assert list(reader.keys()) == []
 
 
 @given(st.text(min_size=1), st.lists(st.floats()))
@@ -77,6 +83,9 @@ def test_null_empty(input_dicts):
     # let's report too, for good measure.
     for k, v in m.items():
       null.report(i, k, v)
+
+  # no keys are available for reading.
+  assert reader.keys() == []
 
   for m in input_dicts:
     ks = m.keys()

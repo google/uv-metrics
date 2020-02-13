@@ -4,6 +4,7 @@ import json
 
 import hypothesis.strategies as st
 import numpy as np
+import tensorflow as tf
 from hypothesis import given
 
 import pytest
@@ -44,6 +45,21 @@ def test_to_serializable():
 
   # by default, to make something serializable, turn it into a string.
   assert u.to_serializable("face") == "face"
+
+  # check that numpy arrays serialize too.
+  assert u.to_serializable(np.zeros(shape=(2, 2))) == [[0.0, 0.0], [0.0, 0.0]]
+
+
+def test_tensor_serialization():
+  # check that an int32-tensorflow constant can get to something serializable.
+  x = tf.constant(10)
+  assert u.to_serializable(x) == 10
+
+  # the serialization passes through, without getting turned into a string:
+  assert u.json_str({"x": x}) == '{"x": 10}'
+
+  # floats pass through as well.
+  assert u.to_serializable(tf.constant(10.5)) == 10.5
 
 
 def test_wrap():

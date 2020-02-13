@@ -4,4 +4,5 @@ pre-commit
 pytest
 pytest-cov
 sphinx
+tensorflow # for testing tensorboard.
 twine

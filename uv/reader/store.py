@@ -4,17 +4,20 @@ values from some underlying store or mechanism.
 
 """
 
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, Iterable, List, Optional
 
 import uv.types as t
-from uv.reader.base import AbstractReader
+from uv.reader.base import AbstractReader, IterableReader
 
 
-class EmptyReader(AbstractReader):
+class EmptyReader(AbstractReader, IterableReader):
   """AbstractReader that uses NO internal state. EmptyReader returns an empty
   list for every metric.
 
   """
+
+  def keys(self) -> Iterable[t.MetricKey]:
+    return []
 
   def read_all(self,
                ks: List[t.MetricKey]) -> Dict[t.MetricKey, List[t.Metric]]:
@@ -69,7 +72,7 @@ class LambdaReader(AbstractReader):
       self._close()
 
 
-class MemoryReader(AbstractReader):
+class MemoryReader(AbstractReader, IterableReader):
   """Reader that queries the supplied dictionary for values.
 
   Args:
@@ -82,6 +85,9 @@ class MemoryReader(AbstractReader):
       m = {}
 
     self._m = m
+
+  def keys(self) -> Iterable[t.Metric]:
+    return self._m.keys()
 
   def read_all(self,
                ks: List[t.MetricKey]) -> Dict[t.MetricKey, List[t.Metric]]:

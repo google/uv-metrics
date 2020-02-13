@@ -16,7 +16,7 @@ versioneer if available; else, returns the default.
     return default
 
 
-REQUIRED_PACKAGES = ["numpy>=1.18.0", "tqdm>=4.42.1"]
+REQUIRED_PACKAGES = ["numpy>=1.18.0", "tqdm>=4.42.1", "fs", "fs-gcsfs"]
 
 setup(
     name='uv',
@@ -29,5 +29,9 @@ setup(
     url='https://team.git.corp.google.com/blueshift/uv',
     packages=find_packages(exclude=('tests', 'docs')),
     install_requires=REQUIRED_PACKAGES,
+    extras_require={
+        "tensorflow": ["tensorboard", "tensorflow"],
+        "all": ["tensorboard", "tensorflow"]
+    },
     include_package_data=True,
 )

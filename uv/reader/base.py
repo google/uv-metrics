@@ -1,11 +1,25 @@
 """The base AbstractReader class, along with all of the subclasses that
 AbstractReader is able to return from any of its methods."""
 
-from abc import ABCMeta
-from typing import Dict, List, Union
+from abc import ABC, ABCMeta, abstractmethod
+from typing import Dict, Iterable, List, Union
 
 import uv.types as t
 import uv.util.prefix as p
+
+
+class IterableReader(ABC):
+  """Class marker for Reader instances that are able to provide an iterable of
+  all keys that it's possible to read using this Reader instance.
+
+  """
+
+  @abstractmethod
+  def keys(self) -> Iterable[t.MetricKey]:
+    """Returns an iterable of all keys that you're able to query from this
+    store.
+
+    """
 
 
 class AbstractReader(metaclass=ABCMeta):
