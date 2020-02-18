@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, Optional
 
 import uv.reader.base as rb
 import uv.types as t
-import uv.util.prefix as p
+import uv.util.attachment as a
 
 
 class AbstractReporter(metaclass=ABCMeta):
@@ -69,6 +69,14 @@ class AbstractReporter(metaclass=ABCMeta):
 
     """
     return PrefixedReporter(self, prefix)
+
+  def with_suffix(self, suffix: t.Suffix):
+    """Returns an instance of SuffixedReporter wrapping the current instance. This
+    reporter attaches the supplied suffix to every metric key it sees before
+    passing metrics on.
+
+    """
+    return SuffixedReporter(self, suffix)
 
   def plus(self, *others: t.AbstractReporter):
     """Returns an instance of MultiReporter wrapping the current instance. This
@@ -277,14 +285,42 @@ class PrefixedReporter(AbstractReporter):
     self._prefix = prefix
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
-    self._base.report_all(step, p.attach(m, self._prefix))
+    self._base.report_all(step, a.attach(m, self._prefix, prefix=True))
 
   def report(self, step: int, k: t.MetricKey, v: t.Metric) -> None:
-    newk = p.attach_s(k, self._prefix)
+    newk = a.attach_s(k, self._prefix, prefix=True)
     self._base.report(step, newk, v)
 
   def reader(self) -> Optional[rb.AbstractReader]:
     return rb.PrefixedReader(self._base.reader(), self._prefix)
+
+  def close(self) -> None:
+    self._base.close()
+
+
+class SuffixedReporter(AbstractReporter):
+  """Reporter that prepends a prefix to all keys before passing requests on to
+  the supplied backing reporter.
+
+  Args:
+    base: Backing reporter. All report and report_all calls proxy here.
+    suffix: the suffix to attach to all keys supplied to any method.
+
+  """
+
+  def __init__(self, base: AbstractReporter, suffix: t.Suffix):
+    self._base = base
+    self._suffix = suffix
+
+  def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
+    self._base.report_all(step, a.attach(m, self._suffix, prefix=False))
+
+  def report(self, step: int, k: t.MetricKey, v: t.Metric) -> None:
+    newk = a.attach_s(k, self._suffix, prefix=False)
+    self._base.report(step, newk, v)
+
+  def reader(self) -> Optional[rb.AbstractReader]:
+    return rb.SuffixedReader(self._base.reader(), self._suffix)
 
   def close(self) -> None:
     self._base.close()

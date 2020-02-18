@@ -5,7 +5,7 @@ from abc import ABC, ABCMeta, abstractmethod
 from typing import Dict, Iterable, List, Union
 
 import uv.types as t
-import uv.util.prefix as p
+import uv.util.attachment as a
 
 
 class IterableReader(ABC):
@@ -67,6 +67,14 @@ class AbstractReader(metaclass=ABCMeta):
     """
     return PrefixedReader(self, prefix)
 
+  def with_suffix(self, suffix: t.Suffix):
+    """"Returns a new reader that will pass through all methods to this reader
+    instance; the only difference will be that every t.MetricKey instance
+    supplied to read or read_all will have the supplied suffix attached.
+
+    """
+    return SuffixedReader(self, suffix)
+
 
 class PrefixedReader(AbstractReader):
   """Reader that prepends a prefix to all keys before passing requests on to the
@@ -84,10 +92,35 @@ class PrefixedReader(AbstractReader):
 
   def read_all(self,
                ks: List[t.MetricKey]) -> Dict[t.MetricKey, List[t.Metric]]:
-    return self._base.read_all(p.attach_iter(ks, self._prefix))
+    return self._base.read_all(a.attach_iter(ks, self._prefix, prefix=True))
 
   def read(self, k: t.MetricKey) -> List[t.Metric]:
-    return self._base.read(p.attach_s(k, self._prefix))
+    return self._base.read(a.attach_s(k, self._prefix, prefix=True))
+
+  def close(self) -> None:
+    self._base.close()
+
+
+class SuffixedReader(AbstractReader):
+  """Reader that prepends a suffix to all keys before passing requests on to the
+  supplied backing store.
+
+  Args:
+    base: Backing reader. All read and read_all calls proxy here.
+    suffix: the suffix to attach to all keys supplied to any method.
+
+  """
+
+  def __init__(self, base: AbstractReader, suffix: t.Suffix):
+    self._base = base
+    self._suffix = suffix
+
+  def read_all(self,
+               ks: List[t.MetricKey]) -> Dict[t.MetricKey, List[t.Metric]]:
+    return self._base.read_all(a.attach_iter(ks, self._suffix, prefix=False))
+
+  def read(self, k: t.MetricKey) -> List[t.Metric]:
+    return self._base.read(a.attach_s(k, self._suffix, prefix=False))
 
   def close(self) -> None:
     self._base.close()

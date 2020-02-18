@@ -9,7 +9,7 @@ import pytest
 import uv.reader.base as b
 import uv.reader.store as rs
 import uv.types as t
-import uv.util.prefix as p
+import uv.util.attachment as a
 
 
 class JustRead(b.AbstractReader):
@@ -64,7 +64,7 @@ def test_default_read_implementations(m):
                        max_size=100))
 def test_prefixed_reader(prefix, m):
   """Test that prefixes work."""
-  prefixed = {p.attach_s(k, prefix): v for k, v in m.items()}
+  prefixed = {a.attach_s(k, prefix, prefix=True): v for k, v in m.items()}
   mem = rs.MemoryReader(prefixed)
 
   # the bare store, when queried with keys with the prefix attached, returns
@@ -75,6 +75,29 @@ def test_prefixed_reader(prefix, m):
   # If instead you generate a new reader using with_prefix, you don't need to
   # pass prefixed keys in to read_all; they'll get automatically attached.
   assert reader.read_all(m.keys()) == prefixed
+
+  # read implementation works too.
+  for k, v in m.items():
+    assert reader.read(k) == v
+
+
+@given(st.text(min_size=1),
+       st.dictionaries(st.text(min_size=1),
+                       st.lists(st.integers(), max_size=100),
+                       max_size=100))
+def test_suffixed_reader(suffix, m):
+  """Test that suffixes work."""
+  suffixed = {a.attach_s(k, suffix, prefix=False): v for k, v in m.items()}
+  mem = rs.MemoryReader(suffixed)
+
+  # the bare store, when queried with keys with the suffix attached, returns
+  # the right stuff.
+  assert mem.read_all(suffixed.keys()) == suffixed
+
+  reader = mem.with_suffix(suffix)
+  # If instead you generate a new reader using with_suffix, you don't need to
+  # pass suffixed keys in to read_all; they'll get automatically attached.
+  assert reader.read_all(m.keys()) == suffixed
 
   # read implementation works too.
   for k, v in m.items():
@@ -97,5 +120,6 @@ def check_passthrough_close(base_to_reader_fn):
     base_to_reader_fn(base).close()
 
 
-def test_prefixed_reader_passthrough_close():
+def test_attached_reader_passthrough_close():
   check_passthrough_close(lambda s: b.PrefixedReader(s, prefix='face'))
+  check_passthrough_close(lambda s: b.SuffixedReader(s, suffix='face'))

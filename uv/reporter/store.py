@@ -98,7 +98,8 @@ class LoggingReporter(AbstractReporter):
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
     s = ", ".join([f"{k} = {self._format(v)}" for k, v in m.items()])
-    print(f"Step {step}: {s}", file=self._file)
+    f = self._file
+    print(f"Step {step}: {s}", file=f)
 
 
 class MemoryReporter(AbstractReporter):

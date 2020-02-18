@@ -54,6 +54,27 @@ def test_prefix_reporter(mem):
     ThrowCloseReporter().with_prefix("prefix").close()
 
 
+def test_suffix_reporter(mem):
+  suffixed = mem.with_suffix("toots")
+  suffixed_reader = suffixed.reader()
+  reader = mem.reader()
+
+  # reporting through a suffixed reporter, through either method, should
+  # prepend the suffix onto the key before hitting the underlying store.
+  suffixed.report_all(0, {"a": 1, "b": 2})
+  suffixed.report(1, "a", 2)
+
+  expected = {"a.toots": [1, 2], "b.toots": [2]}
+
+  # if you read through the base reader, you'll need to prepend the suffix.
+  assert reader.read_all(["a.toots", "b.toots"]) == expected
+  assert suffixed_reader.read_all(["a", "b"]) == expected
+
+  # check that the close is passthrough:
+  with pytest.raises(IOError):
+    ThrowCloseReporter().with_suffix("suffix").close()
+
+
 class CountCloseReporter(b.AbstractReporter):
 
   def __init__(self):

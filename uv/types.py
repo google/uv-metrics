@@ -9,12 +9,5 @@ MetricKey = str
 Metric = Any
 
 Prefix = Union[MetricKey, List[str]]
-MetricMap = Dict[MetricKey, Metric]
-PrefixDict = Dict[MetricKey, MetricMap]
-PrefixIter = Iterable[Tuple[Prefix, MetricMap]]
-
-# iterable of prefixes paired with a metric key. Helps with readers.
-PrefixPairs = Iterable[Tuple[Prefix, MetricKey]]
-
-# dictionary of prefix string to a metric key.
-PrefixToKey = Dict[str, MetricKey]
+Suffix = Union[MetricKey, List[str]]
+Attachment = Union[Prefix, Suffix]
