@@ -19,7 +19,7 @@ versioneer if available; else, returns the default.
 REQUIRED_PACKAGES = ["numpy>=1.18.0", "tqdm>=4.42.1", "fs", "fs-gcsfs"]
 
 setup(
-    name='uv',
+    name='blueshift-uv',
     version=with_versioneer(lambda v: v.get_version()),
     cmdclass=with_versioneer(lambda v: v.get_cmdclass(), {}),
     description='Shared tooling for Blueshift research',
@@ -30,8 +30,8 @@ setup(
     packages=find_packages(exclude=('tests', 'docs')),
     install_requires=REQUIRED_PACKAGES,
     extras_require={
-        "tensorflow": ["tensorboard", "tensorflow"],
-        "all": ["tensorboard", "tensorflow"]
+        "tf": ["tensorflow"],
+        "tf-gpu": ["tensorflow-gpu"],
     },
     include_package_data=True,
 )
