@@ -74,6 +74,21 @@ Then you can do `pip install -e uv`, or add to the requirements file.
 
 Note that `pip install -e uv[tf]` works too, if you want some submodule.
 
+TODO THAT will not work inside of Caliban. Instead, we'll need to proxy.
+
+### Proxy
+
+```bash
+export WORKSTATION="$USER.mtv.corp.google.com"
+
+# open a proxy:
+ssh -N -D 12345 $WORKSTATION
+
+# then install
+pip install --proxy socks5://localhost:12345 --extra-index-url https://artifactory2.nestlabs.com/artifactory/api/pypi/pypi-local/simple/ blueshift-uv
+```
+
+
 # Getting Started
 
 What lives here?

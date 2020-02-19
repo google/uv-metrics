@@ -2,8 +2,6 @@
 reporters together into compound reporters.
 
 """
-from __future__ import annotations
-
 from abc import ABCMeta
 from typing import Any, Callable, Dict, Optional
 
@@ -78,7 +76,7 @@ class AbstractReporter(metaclass=ABCMeta):
     """
     return SuffixedReporter(self, suffix)
 
-  def plus(self, *others: t.AbstractReporter):
+  def plus(self, *others: "AbstractReporter"):
     """Returns an instance of MultiReporter wrapping the current instance. This
     reporter broadcasts its inputs to this instance, plus any other reporters
     supplied to this method, every time it sees a metric passed in via report
@@ -89,7 +87,7 @@ class AbstractReporter(metaclass=ABCMeta):
 
   def filter_step(self,
                   pred: Callable[[int], bool],
-                  on_false: Optional[AbstractReporter] = None):
+                  on_false: Optional["AbstractReporter"] = None):
     """Accepts a predicate function from step to boolean, and returns a reporter
     that tests every step against the supplied function. If the function
     returns true, metrics get passed on to this reporter; else, they get
@@ -107,7 +105,7 @@ class AbstractReporter(metaclass=ABCMeta):
 
   def filter_values(self,
                     pred: Callable[[int, t.Metric], bool],
-                    on_false: Optional[AbstractReporter] = None):
+                    on_false: Optional["AbstractReporter"] = None):
     """"Accepts a function from (step, metric) to boolean; every (step, metric)
     pair passed to report and report_all are passed into this function. If the
     predicate returns true, the metric is passed on; else, it's filtered.
