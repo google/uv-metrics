@@ -1,14 +1,11 @@
 """Utilities shared by functions that interact with pyfilesystem2."""
 
-import json
-from typing import Any, Iterable, List, Union
+from typing import Any, Union
 
 import fs as pyfs
-from fs.base import FS
-
 import uv.types as t
 import uv.util as u
-from uv.reader.base import AbstractReader, IterableReader
+from fs.base import FS
 
 
 class HandleCache():
@@ -21,7 +18,6 @@ class HandleCache():
   def __init__(self, fs: FS):
     self._m = {}
     self._fs = fs
-    pass
 
   def open(self, path: str, mode: str):
     abs_path = pyfs.path.abspath(path)

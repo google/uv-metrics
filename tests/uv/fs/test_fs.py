@@ -6,9 +6,10 @@ from contextlib import closing
 
 import hypothesis.strategies as st
 from hypothesis import given
+from uv.fs.reader import FSReader
+from uv.fs.reporter import FSReporter
 
 import pytest
-from uv.fs import FSReader, FSReporter
 
 
 def test_fs_invalid():
