@@ -22,7 +22,7 @@ setup(
     name='blueshift-uv',
     version=with_versioneer(lambda v: v.get_version()),
     cmdclass=with_versioneer(lambda v: v.get_cmdclass(), {}),
-    description='Shared tooling for Blueshift research',
+    description='Shared tooling for Blueshift research.',
     long_description=readme,
     author='Blueshift Team',
     author_email='samritchie@google.com',
