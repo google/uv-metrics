@@ -13,99 +13,66 @@ easy to:
 
 This page covers the details of how to
 
-- Use the UV library in your project, both in and out of an isolated
+- Use the `blueshift-uv` library in your project, both in and out of an isolated
   [Caliban](http://go/caliban) environment
-- Develop against UV, run its tests and contribute code
+- Develop against `blueshift-uv`, run its tests and contribute code
 
 ## Installing UV
 
-UV is hosted on [Nest's artifactory
+The [Installing UV](http://go/bs-uv#installing-uv) section of UV's [g3doc
+documentation](http://go/bs-uv#installing-uv) describes at length how to require
+the `blueshift-uv` library in your project, in and out of Docker containers.
+Head [to those docs](http://go/bs-uv#installing-uv) for the full story.
+
+Here's a short version, since you made it here.
+
+`blueshift-uv` is hosted on [Nest's artifactory
 instance](https://artifactory2.nestlabs.com/). This is currently the easiest way
-to make UV accessible inside of Docker containers.
+to make `blueshift-uv` accessible inside of Docker containers.
 
-If you're not working inside of a Docker container, you can install the library
-directly from git, or from a locally-checked out copy for development. Otherwise
-you'll need to install from Artifactory. This section covers both methods.
-
-### Installing from Artifactory
-
-If you're not working in a Docker container, the easiest way to install
-`blueshift-uv` is via the usual `pip install`. The only difference is that
-you'll need to use the `--extra-index-url` flag to point `pip` at Nest's
-artifactory instance:
+Run this command to install `uv` using `pip`:
 
 ```bash
 pip install blueshift-uv --extra-index-url https://artifactory2.nestlabs.com/artifactory/api/pypi/pypi-local/simple
 ```
 
-NOTE this will NOT work
-
-OR, you can add this to `~/.pip/pip.conf`:
+You can also add the artifactory instance to your permanent list of indexes to
+search by adding this line to `~/.pip/pip.conf`:
 
 ```yaml
 [global]
 extra-index-url = https://artifactory2.nestlabs.com/artifactory/api/pypi/pypi-local/simple
 ```
 
-And then this will work:
+After this, you can install `blueshift-uv` with the usual `pip` incantations:
 
 ```
 pip install blueshift-uv
 ```
 
-### Inside Docker Containers / Caliban
+### Installing from Git-on-Borg Source
 
-Do this with a `requirements.txt` file:
-
-```
---extra-index-url https://artifactory2.nestlabs.com/artifactory/api/pypi/pypi-local/simple
-blueshift-uv
-```
-
-you can do also add the dependency directly in setup.py:
-
-```
-'blueshift-uv @ https://artifactory2.nestlabs.com/artifactory/api/pypi/pypi-local/blueshift-uv/0.2.1/blueshift-uv-0.2.1.tar.gz'
-```
-
-### Installing from Git-on-Borg
+If you want to install the library directly from source, you can use `pip` to
+pull from the UV git repository directly:
 
 ```bash
 pip install -e git+sso://team/blueshift/uv#egg=blueshift-uv
 ```
 
-If you're developing and want to install a specific branch, append it to the
-repo URL:
+Note that this will *not* work inside of a Docker container or
+[Caliban](http://go/caliban) build, as the container doesn't have the
+credentials required to access `sso://` URLs.
+
+If you're want to install a specific branch, append it to the repo URL like
+this:
 
 ```bash
-pip install -e git+sso://team/blueshift/uv@sritchie/add_notes#egg=blueshift-uv
-```
-
-
-### Local Proxy
-
-If you need to install UV from a laptop, OUTSIDE of a Docker environment, you
-can proxy through your workstation.
-
-```bash
-export WORKSTATION="$USER.mtv.corp.google.com"
-
-# open a proxy:
-ssh -N -D 12345 $WORKSTATION
-
-# you'll need this in your virtual environment to activate the project
-pip install pysocks
-
-# then install the library:
-pip install \
-  --proxy socks5://localhost:12345 \
-  --extra-index-url https://artifactory2.nestlabs.com/artifactory/api/pypi/pypi-local/simple/ \
-  blueshift-uv
+pip install -e git+sso://team/blueshift/uv@{{USERNAME}}/my_branch#egg=blueshift-uv
 ```
 
 ## Developing in UV
 
-So you want to add some code to UV. Excellent!
+So you want to add some code to `blueshift-uv`. Excellent!
 
 ### Checkout and pre-commit hooks
 
@@ -202,10 +169,10 @@ request and push it back up. (Remember, these are aliases we declared above.)
 
 ## Publishing UV
 
-UV is hosted on [Nest's artifactory
+`blueshift-uv` is hosted on [Nest's artifactory
 instance](https://artifactory2.nestlabs.com/).
 
-The first step to publishing UV is to follow the instructions at [this
+The first step to publishing `blueshift-uv` is to follow the instructions at [this
 guide](http://go/nest-pypi-local#generating-your-api-key). Once you:
 
 - Log in to [Artifactory](https://artifactory2.nestlabs.com/)
@@ -218,7 +185,7 @@ You're ready to publish.
 - Make sure that you're on the master branch!
 - add a new tag, with `git tag 0.2.3` or the equivalent
 - `git push; git push --tags`
-- run `make release` to package and push UV to artifactory.
+- run `make release` to package and push `blueshift-uv` to artifactory.
 
 ## Trouble?
 
