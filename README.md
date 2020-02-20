@@ -29,11 +29,16 @@ you'll need to install from Artifactory. This section covers both methods.
 
 ### Installing from Artifactory
 
-This works:
+If you're not working in a Docker container, the easiest way to install
+`blueshift-uv` is via the usual `pip install`. The only difference is that
+you'll need to use the `--extra-index-url` flag to point `pip` at Nest's
+artifactory instance:
 
 ```bash
 pip install blueshift-uv --extra-index-url https://artifactory2.nestlabs.com/artifactory/api/pypi/pypi-local/simple
 ```
+
+NOTE this will NOT work
 
 OR, you can add this to `~/.pip/pip.conf`:
 
