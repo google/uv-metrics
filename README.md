@@ -160,7 +160,7 @@ click the "Download" link at the bottom right:
 Copy the "checkout" code, which will look something like this:
 
 ```bash
-git fetch "sso://team/blueshift/caliban" refs/changes/87/670987/2 && git checkout FETCH_HEAD
+git fetch "sso://team/blueshift/uv" refs/changes/87/670987/2 && git checkout FETCH_HEAD
 ```
 
 And run that in your terminal. This will get you to a checkout with all of your
