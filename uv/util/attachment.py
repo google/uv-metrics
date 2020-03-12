@@ -6,7 +6,7 @@ method.
 """
 
 from collections import ChainMap
-from typing import Any, Dict, Iterable, Union
+from typing import Dict, Iterable
 
 import uv.types as t
 import uv.util as u
@@ -16,6 +16,9 @@ def attach_s(s: t.MetricKey,
              a: t.Attachment,
              prefix: bool = True) -> t.MetricKey:
   """Attach the supplied prefix or suffix to the string s."""
+  if not isinstance(s, str):
+    s = str(s)
+
   if prefix:
     attached = u.wrap(a) + [s]
   else:

@@ -54,6 +54,21 @@ def test_prefix_reporter(mem):
     ThrowCloseReporter().with_prefix("prefix").close()
 
 
+def test_prefix_reporter_handles_int_keys(mem):
+  prefixed = mem.with_prefix("toots")
+  prefixed_reader = prefixed.reader()
+  reader = mem.reader()
+
+  prefixed.report_all(0, {0: 1, 1: 2})
+  prefixed.report(1, 0, 2)
+
+  expected = {"toots.0": [1, 2], "toots.1": [2]}
+
+  # if you read through the base reader, you'll need to prepend the prefix.
+  assert reader.read_all(["toots.0", "toots.1"]) == expected
+  assert prefixed_reader.read_all([0, 1]) == expected
+
+
 def test_suffix_reporter(mem):
   suffixed = mem.with_suffix("toots")
   suffixed_reader = suffixed.reader()
