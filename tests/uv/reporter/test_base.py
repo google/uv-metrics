@@ -60,9 +60,10 @@ def test_prefix_reporter_handles_int_keys(mem):
   reader = mem.reader()
 
   prefixed.report_all(0, {0: 1, 1: 2})
+  prefixed.report_all(0, {"0": 3})
   prefixed.report(1, 0, 2)
 
-  expected = {"toots.0": [1, 2], "toots.1": [2]}
+  expected = {"toots.0": [1, 3, 2], "toots.1": [2]}
 
   # if you read through the base reader, you'll need to prepend the prefix.
   assert reader.read_all(["toots.0", "toots.1"]) == expected

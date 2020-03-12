@@ -91,7 +91,7 @@ class MemoryReader(AbstractReader, IterableReader):
 
   def read_all(self,
                ks: List[t.MetricKey]) -> Dict[t.MetricKey, List[t.Metric]]:
-    return {k: self._m.get(k, []) for k in ks}
+    return {str(k): self._m.get(str(k), []) for k in ks}
 
   def read(self, k: t.MetricKey) -> List[t.Metric]:
-    return self._m.get(k, [])
+    return self._m.get(str(k), [])

@@ -83,3 +83,17 @@ def test_logging_reporter():
   assert mem.items() == [
       'Step 0: a = 1.000', '\n', 'Step 1: a = 2.000, b = cake', '\n'
   ]
+
+
+def test_memory_reporter_types():
+  # make a memory reporter and a paired reader.
+  mem = rs.MemoryReporter()
+  reader = mem.reader()
+
+  # reporting to 1 and "1" should do the same thing.
+  mem.report_all(0, {1: "face"})
+  mem.report_all(1, {"1": "cake"})
+
+  # int and string that stringify to the same key should return the values.
+  assert reader.read(1) == ["face", "cake"]
+  assert reader.read("1") == reader.read(1)

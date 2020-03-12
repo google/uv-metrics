@@ -121,7 +121,7 @@ class MemoryReporter(AbstractReporter):
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
     for k, v in m.items():
-      self._m.setdefault(k, []).append(v)
+      self._m.setdefault(str(k), []).append(v)
 
   def clear(self):
     """Erase all key-value pairs in the backing store."""
