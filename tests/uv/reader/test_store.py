@@ -96,6 +96,17 @@ def test_null_empty(input_dicts):
       assert reader.read(k) == []
 
 
+def test_null_unit():
+  null = rs.NullReporter()
+  reader = null.reader()
+
+  null.report_all(0, {"1": "face"})
+  null.report(0, "2", "cake")
+
+  assert reader.read_all(["1", "2"]) == {"1": [], "2": []}
+  assert reader.read("1") == []
+
+
 @given(st.sets(st.text(min_size=1)))
 def test_lambda_reader(ks):
 
