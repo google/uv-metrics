@@ -21,8 +21,8 @@ def test_lambda_reporter(m):
   reader = mem.reader()
 
   # these lambda reporters write to the backing memory store.
-  r_reporter = rs.LambdaReporter(report=lambda i, k, v: mem.report(i, k, v))
-  ra_reporter = rs.LambdaReporter(report_all=lambda i, m: mem.report_all(i, m))
+  r_reporter = rs.LambdaReporter(report=mem.report)
+  ra_reporter = rs.LambdaReporter(report_all=mem.report_all)
 
   # report it ALL and check that everything made it in.
   ra_reporter.report_all(0, m)
