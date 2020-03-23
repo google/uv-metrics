@@ -33,7 +33,7 @@ class TensorboardReporter(b.AbstractReporter):
   Args:
     log_dir: a string specifying the directory in which to write an event file.
     max_queue: the largest number of summaries to keep in a queue; will
-     flush once the queue gets bigger than this. Defaults to 10.
+     flush once the queue gets bigger than this. Defaults to 100.
     flush_millis: the largest interval between flushes. Defaults to 120,000.
     filename_suffix: optional suffix for the event file name. Defaults to `.v2`.
     name: a name for the op that creates the writer.
@@ -43,7 +43,7 @@ class TensorboardReporter(b.AbstractReporter):
   def __init__(
       self,
       log_dir: str,
-      max_queue: Optional[int] = None,
+      max_queue: Optional[int] = 100,
       flush_millis: Optional[int] = None,
       filename_suffix: Optional[str] = None,
   ):
