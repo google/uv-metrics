@@ -57,7 +57,7 @@ def load_fs(root: Union[FS, str]) -> FS:
 
 def jsonl_path(k: t.MetricKey) -> str:
   """Returns an absolute path with an appropriate suffix for a jsonl file."""
-  return pyfs.path.abspath(f"{k}.jsonl")
+  return pyfs.path.abspath("{}.jsonl".format(k))
 
 
 def to_bytes(item: Union[str, bytes]) -> bytes:

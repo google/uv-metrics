@@ -52,7 +52,7 @@ class LambdaReporter(AbstractReporter):
                close: Optional[Callable[[], None]] = None):
     if report is None and report_all is None:
       raise ValueError(
-          f"Must supply one of `report` and `report_all` to `LambdaReporter`.")
+          "Must supply one of `report` and `report_all` to `LambdaReporter`.")
 
     self._report = report
     self._reportall = report_all
@@ -92,14 +92,14 @@ class LoggingReporter(AbstractReporter):
   def _format(self, v: t.Metric) -> str:
     """Formats the value into something appropriate for logging."""
     if u.is_number(v):
-      return f"{v:.3f}"
+      return "{:.3f}".format(v)
 
     return str(v)
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
-    s = ", ".join([f"{k} = {self._format(v)}" for k, v in m.items()])
+    s = ", ".join(["{} = {}".format(k, self._format(v)) for k, v in m.items()])
     f = self._file
-    print(f"Step {step}: {s}", file=f)
+    print("Step {}: {}".format(step, s), file=f)
 
 
 class MemoryReporter(AbstractReporter):

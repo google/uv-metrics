@@ -48,7 +48,7 @@ class LambdaReader(AbstractReader):
                close: Optional[Callable[[], None]] = None):
     if read is None and read_all is None:
       raise ValueError(
-          f"Must supply one of `read` and `read_all` to `LambdaReader`.")
+          "Must supply one of `read` and `read_all` to `LambdaReader`.")
 
     self._read = read
     self._readall = read_all
