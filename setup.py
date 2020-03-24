@@ -24,7 +24,7 @@ setup(
     cmdclass=with_versioneer(lambda v: v.get_cmdclass(), {}),
     description='Shared tooling for Blueshift research.',
     long_description=readme,
-    python_requires='>3.5.3',
+    python_requires='>=3.5.3',
     author='Blueshift Team',
     author_email='samritchie@google.com',
     url='https://team.git.corp.google.com/blueshift/uv',
