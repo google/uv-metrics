@@ -10,6 +10,7 @@ PYTEST_ARGS = --doctest-modules -v -s --hypothesis-profile dev
 PYTEST_TARGET = uv tests
 COVERAGE_ARGS = --cov-config setup.cfg --cov-report term-missing --cov
 COVERAGE_TARGET = uv
+SCR_REPO = https://source.developers.google.com/p/blueshift-research/r/uv
 
 
 ##
@@ -61,8 +62,18 @@ lint: pre-commit
 .PHONY: pre-commit
 pre-commit: $(ENV_ACT) pre-commit run --all-files
 
-.PHONY: release
+.PHONY: push
+push:
+	git push origin master
+	git push --tags
+	git push $(SCR_REPO) master
+	git push $(SCR_REPO) --tags
+
+.PHONY: release-egg
 release:
 	$(ENV_ACT) python setup.py sdist bdist_wheel
 	$(ENV_ACT) twine upload -r pypi-local dist/*
 	rm -rf dist *.egg* build
+
+.PHONY: release
+release: push release-egg
