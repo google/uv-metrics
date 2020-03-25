@@ -1,5 +1,6 @@
 """Tests of the various reporter store implementations."""
 
+from collections import OrderedDict
 import hypothesis.strategies as st
 import numpy as np
 from hypothesis import given
@@ -77,12 +78,22 @@ def test_logging_reporter():
   reporter.report(0, "a", np.float32(1))
 
   # compound logging.
-  reporter.report_all(1, {"a": 2, "b": "cake"})
+  m = OrderedDict([("a", 2), ("b", "cake")])
+  reporter.report_all(1, m)
 
   # all items have been logged out.
   assert mem.items() == [
       'Step 0: a = 1.000', '\n', 'Step 1: a = 2.000, b = cake', '\n'
   ]
+
+
+def test_logging_reporter_types():
+  mem = ti.MemFile()
+  reporter = rs.LoggingReporter(file=mem)
+
+  v = np.array([1, 2, 3])
+  reporter.report(0, "a", v)
+  assert mem.items() == ['Step 0: a = {}'.format(str(v)), '\n']
 
 
 def test_memory_reporter_types():

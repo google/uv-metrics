@@ -154,6 +154,34 @@ def test_filter_step(mem):
     ThrowCloseReporter().filter_step(lambda step: True).close()
 
 
+def test_report_each_n():
+  mem1 = r.MemoryReporter().report_each_n(-100)
+  mem2 = r.MemoryReporter().report_each_n(1)
+  even_only = r.MemoryReporter().report_each_n(2)
+  reporter = mem1.plus(mem2, even_only)
+  even_reader = even_only.reader()
+
+  reporter.report(0, "a", 0)
+  reporter.report(1, "a", 1)
+  reporter.report(2, "a", 2)
+
+  reporter.report_all(3, {"b": 1, "c": 2})
+  reporter.report_all(4, {"b": 2, "c": 4})
+
+  # only the items written with even steps above should get through.
+  assert even_reader.read_all(["a", "b", "c"]) == {
+      "a": [0, 2],
+      "b": [2],
+      "c": [4]
+  }
+
+  all_data = {"a": [0, 1, 2], "b": [1, 2], "c": [2, 4]}
+
+  # both mem1 and mem2 receive ALL data.
+  assert mem1.reader().read_all(["a", "b", "c"]) == all_data
+  assert mem2.reader().read_all(["a", "b", "c"]) == all_data
+
+
 def test_filter_values(mem):
   on_false = r.MemoryReporter()
 

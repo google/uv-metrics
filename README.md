@@ -184,8 +184,8 @@ You're ready to publish.
 - First, run `make build` to get your virtual environment set up.
 - Make sure that you're on the master branch!
 - add a new tag, with `git tag 0.2.3` or the equivalent
-- `git push; git push --tags`
-- run `make release` to package and push `blueshift-uv` to artifactory.
+- run `make release` to package and push `blueshift-uv` to artifactory and all
+  relevant repositories.
 
 ## Trouble?
 

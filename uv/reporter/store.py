@@ -13,6 +13,8 @@ import uv.types as t
 import uv.util as u
 from uv.reporter.base import AbstractReporter
 
+# Class Definitions
+
 
 class NullReporter(AbstractReporter):
   """Reporter that does nothing with the metrics passed to its various methods.
@@ -87,6 +89,7 @@ class LoggingReporter(AbstractReporter):
     return LoggingReporter(u.TqdmFile(sys.stderr))
 
   def __init__(self, file=sys.stdout):
+
     self._file = file
 
   def _format(self, v: t.Metric) -> str:

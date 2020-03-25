@@ -133,6 +133,19 @@ class AbstractReporter(metaclass=ABCMeta):
     """
     return stepped_reporter(self, step_key=step_key)
 
+  def report_each_n(self, n: int):
+    """Returns a new reporter that only reports every n steps; specifically, the
+    new reporter will only accept metrics where step % n == 0.
+
+    If n <= 1, this reporter, untouched, is returned directly.
+
+    """
+    n = max(1, n)
+    if n > 1:
+      return self.filter_step(lambda step: step % n == 0)
+    else:
+      return self
+
   def from_thunk(self, thunk: Callable[[], Dict[t.MetricKey, t.Metric]]):
     """Returns a new Reporter that passes all AbstractReporter methods through, but
     adds a new method called "thunk()" that, when called, will pass the emitted
