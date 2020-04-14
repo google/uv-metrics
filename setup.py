@@ -16,7 +16,12 @@ versioneer if available; else, returns the default.
     return default
 
 
-REQUIRED_PACKAGES = ["numpy>=1.18.0", "tqdm>=4.42.1", "fs", "fs-gcsfs"]
+CASFS_VERSION = "0.1.0"
+REQUIRED_PACKAGES = [
+    "numpy>=1.18.0", "tqdm>=4.42.1", "fs", "fs-gcsfs",
+    "casfs @ git+https://source.developers.google.com/p/blueshift-research/r/casfs@{}#egg=casfs"
+    .format(CASFS_VERSION)
+]
 
 setup(
     name='blueshift-uv',

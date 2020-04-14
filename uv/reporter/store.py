@@ -88,14 +88,15 @@ class LoggingReporter(AbstractReporter):
     """Returns a logging reporter that will work with a tqdm progress bar."""
     return LoggingReporter(u.TqdmFile(sys.stderr))
 
-  def __init__(self, file=sys.stdout):
+  def __init__(self, file=sys.stdout, digits: int = 3):
 
     self._file = file
+    self._digits = digits
 
   def _format(self, v: t.Metric) -> str:
     """Formats the value into something appropriate for logging."""
     if u.is_number(v):
-      return "{:.3f}".format(v)
+      return "{num:.{digits}f}".format(num=float(v), digits=self._digits)
 
     return str(v)
 
