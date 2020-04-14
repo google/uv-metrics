@@ -5,8 +5,10 @@ import uuid
 from contextlib import closing
 
 import hypothesis.strategies as st
+import uv.fs.util as u
+from casfs import CASFS
 from hypothesis import given
-from uv.fs.reader import FSReader
+from uv.fs.reader import CASReader, FSReader
 from uv.fs.reporter import FSReporter
 
 import pytest
@@ -71,3 +73,45 @@ def test_fs_many(tmpdir, m):
 
       # Check that the reader has all the goods!
       assert set(reader.keys()) == set(m.keys())
+
+
+@pytest.fixture
+def casfs(tmpdir):
+  return u.get_cas(str(tmpdir))
+
+
+def test_casfs_reader(tmpdir, casfs):
+  """Check that we can persist metrics into a content-addressable store and get
+  them back out.
+
+  """
+  dir_path = str(tmpdir)
+
+  with closing(FSReporter(dir_path).stepped()) as reporter:
+    with closing(reporter.reader()) as reader:
+      reporter.report_all(0, {"a": 1})
+      reporter.report_all(1, {"a": 2, "b": 3})
+      reporter.report_all(2, {"b": 4})
+
+      a_entries = [{"step": 0, "value": 1}, {"step": 1, "value": 2}]
+      b_entries = [{"step": 1, "value": 3}, {"step": 2, "value": 4}]
+
+      # Persist the whole metrics directory to the CAS. k is a key that
+      # references the zipped metrics dir.
+      #
+      # If you store k.id (a string) in SQL, you can use it later to get access
+      # to the metrics, as we'll see below.
+      k = u.persist_to_cas_via_memory(casfs, dir_path)
+
+      # This reader can read directly from the CasFS.
+      with closing(CASReader(casfs, k.id)) as cas_reader:
+        assert list(cas_reader.keys()) == list(reader.keys())
+
+        # Contents are all identical:
+        assert reader.read_all(["a", "b"]) == cas_reader.read_all(["a", "b"])
+
+        # and the contents match what's expected:
+        assert cas_reader.read_all(["a", "b"]) == {
+            "a": a_entries,
+            "b": b_entries
+        }

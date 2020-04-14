@@ -7,6 +7,10 @@
   causes the reporter to only report when the `step % n == 0`.
 - Added a `digits` arguments to `LoggingReporter` that allows you to print more
   digits in the output.
+- Added `CASReader`, a reader implementation that can pull items from an
+  instance of CASFS.
+- Added a function that can copy metrics directories into a CASFS instance
+  located anywhere.
 
 ## 0.3.0
 

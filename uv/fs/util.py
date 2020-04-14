@@ -1,11 +1,15 @@
 """Utilities shared by functions that interact with pyfilesystem2."""
 
+import io
 from typing import Any, Union
 
 import fs as pyfs
 import uv.types as t
 import uv.util as u
+from casfs import CASFS
 from fs.base import FS
+from fs.copy import copy_fs
+from fs.zipfs import ZipFS
 
 
 class HandleCache():
@@ -79,3 +83,30 @@ def jsonl_bytes(v: Any) -> bytes:
 
   """
   return to_bytes(u.json_str(v) + "\n")
+
+
+def get_cas(cas_input):
+  """Version of the CASFS constructor that creates directories that don't exist.
+  TODO delete this once we get that idea merged back into CASFS.
+
+  """
+  cas_fs = pyfs.open_fs(cas_input, create=True)
+  return CASFS(cas_fs)
+
+
+def persist_to_cas_via_memory(cfs, source_fs):
+  """Example call:
+
+  persist_to_cas_via_memory(
+    CASFS("/Users/samritchie/casfs"),
+    "/Users/samritchie/tester" # metrics directory
+  )
+
+  """
+  with io.BytesIO() as f:
+    # make sure the ZipFS closes before we attempt to transfer its contents
+    # over to the content addressable store.
+    with ZipFS(f, write=True) as zfs:
+      copy_fs(source_fs, zfs)
+
+    return cfs.put(f)

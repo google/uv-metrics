@@ -8,11 +8,12 @@ import json
 from typing import Iterable, List, Union
 
 import fs as pyfs
-from fs.base import FS
-
-import uv.types as t
-from uv.reader.base import AbstractReader, IterableReader
 import uv.fs.util as u
+import uv.types as t
+from casfs.base import CASFS, Key
+from fs.base import FS
+from fs.zipfs import ZipFS
+from uv.reader.base import AbstractReader, IterableReader
 
 
 class FSReader(AbstractReader, IterableReader):
@@ -49,3 +50,17 @@ class FSReader(AbstractReader, IterableReader):
 
   def close(self) -> None:
     self._fs.close()
+
+
+class CASReader(FSReader):
+  """Override that closes the file too."""
+
+  def __init__(self, cas: CASFS, k: Key):
+    self._handle = cas.open(k)
+    zfs = ZipFS(self._handle)
+
+    super(CASReader, self).__init__(zfs)
+
+  def close(self) -> None:
+    super(CASReader, self).close()
+    self._handle.close()
