@@ -1,4 +1,10 @@
-## 0.4.0 (PENDING)
+## 0.4.1 (PENDING)
+
+- bumped the minimum python version back up to 3.6.
+- SQLReader and SQLReporter; these work like other persistent stores, but work
+  with local SQLite databases.
+
+## 0.4.0
 
 - on TensorboardReporter, pushed the default max_queue up to 100.
 - Removed f-strings so that we stay compatible with Python 3.5.2 and up.

@@ -6,6 +6,7 @@ ENV_NAME = env
 ENV_ACT = . env/bin/activate;
 PIP = $(ENV_NAME)/bin/pip
 PY = $(ENV_NAME)/bin/python
+PYTHON_BIN=python3.6
 PYTEST_ARGS = --doctest-modules -v -s --hypothesis-profile dev
 PYTEST_TARGET = uv tests
 COVERAGE_ARGS = --cov-config setup.cfg --cov-report term-missing --cov
@@ -39,7 +40,7 @@ clean-files:
 .PHONY: install
 install:
 	rm -rf $(ENV_NAME)
-	virtualenv -p python3.5 $(ENV_NAME)
+	virtualenv -p $(PYTHON_BIN) $(ENV_NAME)
 	$(PIP) install -r requirements-dev.txt && $(PIP) install -e .[tf]
 
 .PHONY: test

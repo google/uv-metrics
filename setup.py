@@ -20,7 +20,7 @@ CASFS_VERSION = "0.1.0"
 REQUIRED_PACKAGES = [
     "numpy>=1.18.0", "tqdm>=4.42.1", "fs", "fs-gcsfs",
     "casfs @ git+https://source.developers.google.com/p/blueshift-research/r/casfs@{}#egg=casfs"
-    .format(CASFS_VERSION)
+    .format(CASFS_VERSION), "sqlalchemy"
 ]
 
 setup(
@@ -29,7 +29,7 @@ setup(
     cmdclass=with_versioneer(lambda v: v.get_cmdclass(), {}),
     description='Shared tooling for Blueshift research.',
     long_description=readme,
-    python_requires='>=3.5.3',
+    python_requires='>=3.6.0',
     author='Blueshift Team',
     author_email='samritchie@google.com',
     url='https://team.git.corp.google.com/blueshift/uv',
