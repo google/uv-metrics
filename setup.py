@@ -45,9 +45,9 @@ setup(
     description='Shared tooling for Blueshift research.',
     long_description=readme,
     python_requires='>=3.6.0',
-    author='Blueshift Team',
+    author='Sam Ritchie',
     author_email='samritchie@google.com',
-    url='https://team.git.corp.google.com/blueshift/uv',
+    url='https://github.com/google/uv',
     packages=find_packages(exclude=('tests', 'docs')),
     install_requires=REQUIRED_PACKAGES,
     extras_require={
