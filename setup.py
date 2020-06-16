@@ -46,7 +46,7 @@ setup(
     name='uv-metrics',
     version=with_versioneer(lambda v: v.get_version()),
     cmdclass=with_versioneer(lambda v: v.get_cmdclass(), {}),
-    description='Shared tooling for Blueshift research.',
+    description='Composable metric reporters in Python.',
     long_description=readme(),
     long_description_content_type="text/markdown",
     python_requires='>=3.6.0',
