@@ -15,9 +15,6 @@
 # limitations under the License.
 from setuptools import setup, find_packages
 
-with open('README.md') as f:
-  readme = f.read()
-
 
 def with_versioneer(f, default=None):
   """Attempts to execute the supplied single-arg function by passing it
@@ -31,11 +28,18 @@ versioneer if available; else, returns the default.
     return default
 
 
+def readme():
+  try:
+    with open('README.md') as f:
+      return f.read()
+  except Exception:
+    return None
+
+
 CASFS_VERSION = "0.1.0"
 REQUIRED_PACKAGES = [
-    "numpy>=1.18.0", "tqdm>=4.42.1", "fs", "fs-gcsfs",
-    "casfs @ git+https://source.developers.google.com/p/blueshift-research/r/casfs@{}#egg=casfs"
-    .format(CASFS_VERSION), "sqlalchemy"
+    "numpy>=1.18.0", "tqdm>=4.42.1", "fs", "fs-gcsfs", "casfs==0.1.1",
+    "sqlalchemy"
 ]
 
 setup(
@@ -43,11 +47,13 @@ setup(
     version=with_versioneer(lambda v: v.get_version()),
     cmdclass=with_versioneer(lambda v: v.get_cmdclass(), {}),
     description='Shared tooling for Blueshift research.',
-    long_description=readme,
+    long_description=readme(),
+    long_description_content_type="text/markdown",
     python_requires='>=3.6.0',
     author='Sam Ritchie',
     author_email='samritchie@google.com',
-    url='https://github.com/google/uv',
+    url='https://github.com/google/uv-metrics',
+    license='Apache-2.0',
     packages=find_packages(exclude=('tests', 'docs')),
     install_requires=REQUIRED_PACKAGES,
     extras_require={

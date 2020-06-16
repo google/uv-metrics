@@ -78,7 +78,7 @@ push:
 	git push $(SCR_REPO) --tags
 
 .PHONY: release-egg
-release:
+release-egg:
 	$(ENV_ACT) python setup.py sdist bdist_wheel
 	$(ENV_ACT) twine upload -r pypi-local dist/*
 	rm -rf dist *.egg* build
