@@ -80,7 +80,7 @@ push:
 .PHONY: release-egg
 release-egg:
 	$(ENV_ACT) python setup.py sdist bdist_wheel
-	$(ENV_ACT) twine upload -r pypi-local dist/*
+	$(ENV_ACT) twine upload -r pypi dist/*
 	rm -rf dist *.egg* build
 
 .PHONY: release
