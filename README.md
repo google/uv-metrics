@@ -1,6 +1,6 @@
 # UV Metrics
 
-[![Build status](https://img.shields.io/travis/google/uv-metrics/master.svg?maxAge=3600)](http://travis-ci.org/google/uv-metrics)
+[![Build status](https://github.com/google/uv-metrics/workflows/build/badge.svg?branch=master)](https://github.com/google/uv-metrics/actions?query=workflow%3Abuild+branch%3Amaster)
 [![Codecov branch](https://img.shields.io/codecov/c/github/google/uv-metrics/master.svg?maxAge=3600)](https://codecov.io/github/google/uv-metrics)
 [![readthedocs](https://img.shields.io/readthedocs/uv-metrics?maxAge=3600)](https://uv-metrics.readthedocs.io/en/latest/?badge=latest)
 [![Latest version](https://img.shields.io/pypi/v/uv-metrics?maxAge=3600)](https://pypi.org/project/uv-metrics)
