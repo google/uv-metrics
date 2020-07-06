@@ -59,6 +59,7 @@ setup(
     extras_require={
         "tf": ["tensorflow"],
         "tf-gpu": ["tensorflow-gpu"],
+        "mlflow": ["mlflow"],
     },
     include_package_data=True,
 )
