@@ -228,6 +228,12 @@ class FilterValuesReporter(AbstractReporter):
     self._pred = predicate
     self._on_false_reporter = on_false_reporter
 
+  def report_param(self, k: str, v: str) -> None:
+    return self._base.report_param(k, v)
+
+  def report_params(self, m: Dict[str, str]) -> None:
+    return self._base.report_params(m)
+
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
     good = {k: v for k, v in m.items() if self._pred(step, v)}
     bad = {k: v for k, v in m.items() if not self._pred(step, v)}
@@ -270,6 +276,12 @@ class MapValuesReporter(AbstractReporter):
                                                           t.Metric]):
     self._base = base
     self._fn = fn
+
+  def report_param(self, k: str, v: str) -> None:
+    return self._base.report_param(k, v)
+
+  def report_params(self, m: Dict[str, str]) -> None:
+    return self._base.report_params(m)
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
     self._base.report_all(step, {k: self._fn(step, v) for k, v in m.items()})
@@ -324,6 +336,12 @@ class PrefixedReporter(AbstractReporter):
     self._base = base
     self._prefix = prefix
 
+  def report_param(self, k: str, v: str) -> None:
+    return self._base.report_param(k, v)
+
+  def report_params(self, m: Dict[str, str]) -> None:
+    return self._base.report_params(m)
+
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
     self._base.report_all(step, a.attach(m, self._prefix, prefix=True))
 
@@ -351,6 +369,12 @@ class SuffixedReporter(AbstractReporter):
   def __init__(self, base: AbstractReporter, suffix: t.Suffix):
     self._base = base
     self._suffix = suffix
+
+  def report_param(self, k: str, v: str) -> None:
+    return self._base.report_param(k, v)
+
+  def report_params(self, m: Dict[str, str]) -> None:
+    return self._base.report_params(m)
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
     self._base.report_all(step, a.attach(m, self._suffix, prefix=False))
@@ -383,6 +407,12 @@ class ThunkReporter(AbstractReporter):
 
   def thunk(self, step: int) -> None:
     self.report_all(step, self._thunk())
+
+  def report_param(self, k: str, v: str) -> None:
+    return self._base.report_param(k, v)
+
+  def report_params(self, m: Dict[str, str]) -> None:
+    return self._base.report_params(m)
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
     self._base.report_all(step, m)

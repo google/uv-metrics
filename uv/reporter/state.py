@@ -18,7 +18,9 @@
 from contextlib import contextmanager
 from typing import Dict
 
+import mlflow as mlf
 import uv.types as t
+import uv.util.env as ue
 from uv.reporter.base import AbstractReporter
 from uv.reporter.store import NullReporter
 
@@ -62,3 +64,33 @@ def report_all(step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
 
   """
   return get_reporter().report_all(step, m)
+
+
+def report_param(k: str, v: str) -> None:
+  """Accepts a key and value parameter and logs these as parameters alongside the
+    reported metrics. Reports to the globally available reporter returned by
+    uv.get_reporter().
+
+    """
+  return get_reporter().report_param(k, v)
+
+
+def report_params(m: Dict[str, str]) -> None:
+  """Accepts a dict of parameter name -> value, and logs these as parameters
+  alongside the reported metrics. Reports to the globally available reporter
+  returned by uv.get_reporter().
+
+  """
+  return get_reporter().report_params(m)
+
+
+def start_run(param_prefix=None, **args):
+  """Close alias of mlflow.start_run. The only difference is that uv.start_run
+  attempts to extract parameters from the environment and log those to the
+  bound UV reporter using `report_params`.
+
+  """
+  ret = mlf.start_run(**args)
+  env_params = ue.extract_params(prefix=param_prefix)
+  report_params(env_params)
+  return ret

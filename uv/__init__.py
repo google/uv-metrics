@@ -14,9 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from uv.reporter.state import (active_reporter, get_reporter, report,
-                               report_all, set_reporter)
-
-from mlflow import start_run
+                               report_all, set_reporter, start_run)
 
 from ._version import get_versions
 
@@ -29,7 +27,6 @@ __all__ = [
     "set_reporter",
     "report",
     "report_all",
-    "start_run",
     "AbstractReporter",
     "LoggingReporter",
     "MemoryReporter",
