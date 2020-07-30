@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 
 def with_versioneer(f, default=None):
@@ -38,8 +38,13 @@ def readme():
 
 CASFS_VERSION = "0.1.0"
 REQUIRED_PACKAGES = [
-    "numpy>=1.18.0", "tqdm>=4.42.1", "fs", "fs-gcsfs", "casfs==0.1.1",
-    "sqlalchemy"
+    "casfs==0.1.1",
+    "fs",
+    "fs-gcsfs",
+    "mlflow==1.10.0",
+    "numpy>=1.18.0",
+    "sqlalchemy",
+    "tqdm>=4.42.1",
 ]
 
 setup(
@@ -59,7 +64,6 @@ setup(
     extras_require={
         "tf": ["tensorflow"],
         "tf-gpu": ["tensorflow-gpu"],
-        "mlflow": ["mlflow"],
     },
     include_package_data=True,
 )
