@@ -18,7 +18,6 @@
 from typing import Dict
 
 import mlflow
-
 import uv.reporter.base as b
 import uv.types as t
 
@@ -28,6 +27,12 @@ class MLFlowReporter(b.AbstractReporter):
 
   def __init__(self):
     pass
+
+  def report_param(self, k: str, v: str) -> None:
+    mlflow.log_param(k, v)
+
+  def report_params(self, m: Dict[str, str]) -> None:
+    mlflow.log_params(m)
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
     mlflow.log_metrics(m, step=step)

@@ -38,6 +38,20 @@ class AbstractReporter(metaclass=ABCMeta):
 
   """
 
+  def report_param(self, k: str, v: str) -> None:
+    """Accepts a key and value parameter and logs these as parameters alongside the
+    reported metrics.
+
+    """
+    return None
+
+  def report_params(self, m: Dict[str, str]) -> None:
+    """Accepts a dict of parameter name -> value, and logs these as parameters
+    alongside the reported metrics.
+
+    """
+    return None
+
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
     """Accepts a step (an ordered int referencing some timestep) and a dictionary
     of metric key => metric value, and persists the metric into some underlying

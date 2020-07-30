@@ -15,11 +15,11 @@
 # limitations under the License.
 """Reporter interface and implementations."""
 
-from mlflow import log_params, start_run
 from uv.reporter.base import AbstractReporter
 from uv.reporter.store import LoggingReporter, MemoryReporter
 
 __all__ = [
-    "AbstractReporter", "LoggingReporter", "MemoryReporter", "log_params",
-    "start_run"
+    "AbstractReporter",
+    "LoggingReporter",
+    "MemoryReporter",
 ]
