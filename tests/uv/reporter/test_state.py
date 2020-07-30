@@ -45,7 +45,18 @@ def test_global_reporter():
   assert reader1.read("face") == [2, 2]
   assert reader1.read_all(["face", "cake"]) == {"face": [2, 2], "cake": [3]}
 
+  # params are correctly reported.
+  s.report_param("key_for_me", "value")
+  s.report_params({"k": "v", "k2": "v2"})
+  assert r1._params == {"key_for_me": "value", "k": "v", "k2": "v2"}
+
   with s.active_reporter(r2):
+
+    # params get reported to the proper reporter.
+    s.report_param("key", "value")
+    assert r1._params == {"key_for_me": "value", "k": "v", "k2": "v2"}
+    assert r2._params == {"key": "value"}
+
     # These report go through to r2, not r1.
     s.report(1, "hammer", 2)
     s.report_all(1, {"steve": 2, "john": 3})
