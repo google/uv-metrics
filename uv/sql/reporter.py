@@ -30,7 +30,6 @@ from sqlalchemy import JSON, REAL, Column, Integer, String
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.query import Query
 from uv.reporter.base import AbstractReporter
 
 Base = declarative_base()

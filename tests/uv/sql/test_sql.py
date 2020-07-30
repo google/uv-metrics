@@ -57,7 +57,7 @@ def test_rep_string():
   assert "params='None'" in str(metric)
 
 
-def test_sql_roundtrip(tmp_path):
+def test_of_sql_roundtrip(tmp_path):
   engine = u.sqlite_engine(str(tmp_path))
 
   # you can't make a reporter with an engine pointing to a nonexistent DB:
