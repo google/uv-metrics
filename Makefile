@@ -42,6 +42,7 @@ install:
 	rm -rf $(ENV_NAME)
 	virtualenv -p $(PYTHON_BIN) $(ENV_NAME)
 	$(PIP) install -r requirements-dev.txt && $(PIP) install -e .[tf]
+	$(PIP) install -r docs/requirements.txt
 
 .PHONY: test
 test: lint pytest
