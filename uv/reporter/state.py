@@ -17,7 +17,7 @@
 
 import os
 from contextlib import contextmanager
-from typing import Dict
+from typing import Dict, Optional
 
 import mlflow as mlf
 import uv.types as t
@@ -39,6 +39,7 @@ def set_reporter(r: AbstractReporter) -> AbstractReporter:
   """Set the globally available reporter instance. Returns its input."""
   global _active_reporter
   _active_reporter = r
+  return _active_reporter
 
 
 @contextmanager
@@ -85,9 +86,10 @@ def report_params(m: Dict[str, str]) -> None:
   return get_reporter().report_params(m)
 
 
-def start_run(param_prefix: str = None,
-              experiment_name: str = None,
-              run_name: str = None,
+def start_run(param_prefix: Optional[str] = None,
+              experiment_name: Optional[str] = None,
+              run_name: Optional[str] = None,
+              artifact_location: Optional[str] = None,
               **args):
   """Close alias of mlflow.start_run. The only difference is that uv.start_run
   attempts to extract parameters from the environment and log those to the
@@ -100,8 +102,13 @@ def start_run(param_prefix: str = None,
   if run_name is None:
     run_name = os.environ.get("MLFLOW_RUN_NAME")
 
+  if artifact_location is None:
+    artifact_location = os.environ.get("MLFLOW_ARTIFACT_ROOT")
+
   # Make sure the experiment exists before the run starts.
   if experiment_name is not None:
+    if mlf.get_experiment_by_name(experiment_name) is None:
+      mlf.create_experiment(experiment_name, artifact_location)
     mlf.set_experiment(experiment_name)
 
   ret = mlf.start_run(run_name=run_name, **args)
