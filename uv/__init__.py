@@ -27,6 +27,7 @@ __all__ = [
     "set_reporter",
     "report",
     "report_all",
+    "start_run",
     "AbstractReporter",
     "LoggingReporter",
     "MemoryReporter",

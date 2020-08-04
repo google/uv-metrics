@@ -15,6 +15,7 @@
 # limitations under the License.
 """Reporter interface and implementations."""
 
+import os
 from contextlib import contextmanager
 from typing import Dict
 
@@ -84,13 +85,20 @@ def report_params(m: Dict[str, str]) -> None:
   return get_reporter().report_params(m)
 
 
-def start_run(param_prefix=None, **args):
+def start_run(param_prefix: str = None, experiment_name: str = None, **args):
   """Close alias of mlflow.start_run. The only difference is that uv.start_run
   attempts to extract parameters from the environment and log those to the
   bound UV reporter using `report_params`.
 
   """
+  if experiment_name is None:
+    experiment_name = os.environ.get("MLFLOW_EXPERIMENT_NAME")
+
+  # Make sure the experiment exists before the run starts.
+  if experiment_name is not None:
+    mlf.set_experiment(experiment_name)
+
   ret = mlf.start_run(**args)
   env_params = ue.extract_params(prefix=param_prefix)
-  report_params(env_params)
+  mlf.set_tags(env_params)
   return ret
