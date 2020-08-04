@@ -15,6 +15,7 @@
 # limitations under the License.
 """Tests for the SQL reader and reporter."""
 
+import time
 from contextlib import closing
 
 import uv.sql.reporter as sr
@@ -57,7 +58,7 @@ def test_rep_string():
   assert "params='None'" in str(metric)
 
 
-def test_sql_roundtrip(tmp_path):
+def test_of_sql_roundtrip(tmp_path):
   engine = u.sqlite_engine(str(tmp_path))
 
   # you can't make a reporter with an engine pointing to a nonexistent DB:
@@ -75,6 +76,7 @@ def test_sql_roundtrip(tmp_path):
     with closing(reporter.reader()) as reader:
       with closing(sr.SQLReader(engine, experiment, 0)) as reader2:
 
+        time.sleep(1)
         reporter.report_all(0, {"a": 1})
         reporter.report_all(1, {"a": 2, "b": 3})
         reporter.report_all(2, {"b": 4})

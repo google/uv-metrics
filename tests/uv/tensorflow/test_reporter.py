@@ -72,8 +72,8 @@ logged, false otherwise."""
   return len(event.summary.value) > 0
 
 
-def get_summaries(events: Iterable[event_pb2.Event]
-                 ) -> Iterable[Dict[str, Any]]:
+def get_summaries(
+    events: Iterable[event_pb2.Event]) -> Iterable[Dict[str, Any]]:
   """Returns a sequence of dictionaries represen"""
 
   def process(e):
