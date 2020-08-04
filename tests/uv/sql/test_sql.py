@@ -76,7 +76,7 @@ def test_of_sql_roundtrip(tmp_path):
     with closing(reporter.reader()) as reader:
       with closing(sr.SQLReader(engine, experiment, 0)) as reader2:
 
-        time.sleep(0.4)
+        time.sleep(1)
         reporter.report_all(0, {"a": 1})
         reporter.report_all(1, {"a": 2, "b": 3})
         reporter.report_all(2, {"b": 4})
