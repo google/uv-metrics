@@ -13,8 +13,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from uv.reporter.base import AbstractReporter
 from uv.reporter.state import (active_reporter, get_reporter, report,
                                report_all, set_reporter, start_run)
+from uv.reporter.store import LoggingReporter, MemoryReporter
 
 from ._version import get_versions
 
