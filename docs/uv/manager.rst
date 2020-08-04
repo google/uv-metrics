@@ -13,14 +13,17 @@ measurements (e.g., the test dataset), e.g.:
 
 .. code-block:: python
 
+    import uv.manager as m
+    import uv.reporter as r
+
     # make reporter
-    reporter = reporters.build_reporters()
+    reporter = r.MemoryReporter().stepped()
 
     # make static state dictionary
     static_state = {'test_set': test_dset}
 
     # initialize manager
-    oscilloscope = manager.MeasurementManager(static_state, reporter)
+    oscilloscope = m.MeasurementManager(static_state, reporter)
 
 Once the `MeasurementManager` is initialized, you must then tell it which
 measurements to make, and at what interval to make them.  The measurement is
@@ -47,12 +50,14 @@ the objects needed for measurements which vary during traning, e.g.
         current_dict = {'params': optimizer_state.params}
         oscilloscope.process(step, current_dict)
 
-If we want to force a measurement when it wouldn't ordinarily be measured, we
-can use the `trigger_subset` method as follows
+If we want to perform a measurement at any time (say outside the normal
+schedule), we can use the `perform_specified_measurements` method as follows:
 
 .. code-block:: python
 
-    oscilloscope.trigger_subset(step, current_dict, ['test_acc']
+    oscilloscope.perform_specified_measurements(step, current_dict,
+                                                ['test_acc'])
+
 Indices and tables
 ==================
 

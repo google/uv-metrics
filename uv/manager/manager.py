@@ -16,7 +16,7 @@
 """The MeasurementManager class, which conducts and reports on measurements
 which may be measured at varying intervals through training."""
 
-from typing import Dict, Iterable, List, Any, Type, Union, Callable
+from typing import Dict, Iterable, List, Any, Union, Callable
 from uv.reporter import AbstractReporter
 
 
@@ -44,8 +44,7 @@ class MeasurementManager:
     reporter: Reporter which will report the measurements.
   """
 
-  def __init__(self, static_state: Dict[str, Any],
-               reporter: Type[AbstractReporter]):
+  def __init__(self, static_state: Dict[str, Any], reporter: AbstractReporter):
     self.static_state = static_state
     self.reporter = reporter
     self.measurements = {}
@@ -76,26 +75,32 @@ class MeasurementManager:
                     measurement
     """
 
-    to_measure = []
-    for msmt_name, msmt_spec in self.measurements.items():
-      if step % msmt_spec['interval'] == 0:
-        to_measure.append(msmt_name)
+    to_measure = self.required_measurements(step)
 
     if len(to_measure) > 0:
-      self.trigger_subset(step, dynamic_state, to_measure)
+      self.perform_specified_measurements(step, dynamic_state, to_measure)
 
-  def trigger_subset(self, step: int, dynamic_state: Dict[str, Any],
-                     msmt_list: Iterable[str]):
+  def required_measurements(self, step: int) -> Iterable[str]:
+    """ Returns an iterable of measurement names which are to be
+    performed a the given step """
+
+    for name, spec in self.measurements.items():
+      if step % spec['interval'] == 0:
+        yield name
+
+  def perform_specified_measurements(self, step: int, dynamic_state: Dict[str,
+                                                                          Any],
+                                     measurement_list: Iterable[str]):
     """ Regardless of step, performs the measurements specified
-    by msmt_list and reports them """
+    by measurement_list and reports them """
 
     full_state = {**self.static_state, **dynamic_state}
 
-    msmts = {}
-    for msmt_name in msmt_list:
-      msmt_fun = self.measurements[msmt_name]['function']
-      msmt_value = msmt_fun(full_state)
+    measurements = {}
+    for name in measurement_list:
+      measurement_fn = self.measurements[name]['function']
+      measured_value = measurement_fn(full_state)
 
-      msmts[msmt_name] = msmt_value
+      measurements[name] = measured_value
 
-    self.reporter.report_all(step, msmts)
+    self.reporter.report_all(step, measurements)
