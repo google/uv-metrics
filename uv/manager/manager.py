@@ -77,8 +77,7 @@ class MeasurementManager:
 
     to_measure = self.required_measurements(step)
 
-    if len(to_measure) > 0:
-      self.perform_specified_measurements(step, dynamic_state, to_measure)
+    self.perform_specified_measurements(step, dynamic_state, to_measure)
 
   def required_measurements(self, step: int) -> Iterable[str]:
     """ Returns an iterable of measurement names which are to be
@@ -103,4 +102,5 @@ class MeasurementManager:
 
       measurements[name] = measured_value
 
-    self.reporter.report_all(step, measurements)
+    if len(measurements) > 0:
+      self.reporter.report_all(step, measurements)
