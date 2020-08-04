@@ -15,7 +15,8 @@
 # limitations under the License.
 from uv.reporter.base import AbstractReporter
 from uv.reporter.state import (active_reporter, get_reporter, report,
-                               report_all, set_reporter, start_run)
+                               report_all, report_param, report_params,
+                               set_reporter, start_run)
 from uv.reporter.store import LoggingReporter, MemoryReporter
 
 from ._version import get_versions
@@ -29,6 +30,8 @@ __all__ = [
     "set_reporter",
     "report",
     "report_all",
+    "report_param",
+    "report_params",
     "start_run",
     "AbstractReporter",
     "LoggingReporter",
