@@ -90,11 +90,13 @@ def start_run(param_prefix: Optional[str] = None,
               experiment_name: Optional[str] = None,
               run_name: Optional[str] = None,
               artifact_location: Optional[str] = None,
-              **args):
+              **args) -> mlf.ActiveRun:
   """Close alias of mlflow.start_run. The only difference is that uv.start_run
   attempts to extract parameters from the environment and log those to the
   bound UV reporter using `report_params`.
 
+  Note that the returned value can be used as a context manager:
+  https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.start_run
   """
   if experiment_name is None:
     experiment_name = os.environ.get("MLFLOW_EXPERIMENT_NAME")
