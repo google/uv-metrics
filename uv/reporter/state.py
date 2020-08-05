@@ -114,4 +114,14 @@ def start_run(param_prefix: Optional[str] = None,
   ret = mlf.start_run(run_name=run_name, **args)
   env_params = ue.extract_params(prefix=param_prefix)
   mlf.set_tags(env_params)
+
+  # for CAIP jobs, we add the job id as a tag, along with a link to the
+  # console page
+  cloud_ml_job_id = os.environ.get('CLOUD_ML_JOB_ID')
+  if cloud_ml_job_id is not None:
+    mlf.set_tag(
+        'cloud_ml_job_details',
+        f'https://console.cloud.google.com/ai-platform/jobs/{cloud_ml_job_id}')
+    mlf.set_tag('cloud_ml_job_id', cloud_ml_job_id)
+
   return ret
