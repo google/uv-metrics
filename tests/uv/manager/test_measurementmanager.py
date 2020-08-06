@@ -17,6 +17,7 @@
 
 import uv.reporter as r
 import uv.manager as m
+import pytest
 
 
 def test_manager_setup():
@@ -40,16 +41,32 @@ def test_add_measurement():
 
   assert len(test_manager.measurements) == 0
 
+  INTERVAL = 10
+  MEASURED_VALUE = 0
+  MEASUREMENT_NAME = 'L2'
+
   test_manager.add_measurement({
-      'name': 'L2',
-      'interval': 10,
-      'function': lambda state: 0
+      'name': MEASUREMENT_NAME,
+      'interval': INTERVAL,
+      'function': lambda state: MEASURED_VALUE
   })
 
   assert len(test_manager.measurements) == 1
-  assert 'L2' in test_manager.measurements.keys()
-  assert test_manager.measurements['L2']['interval'] == 10
-  assert test_manager.measurements['L2']['function'](static_state) == 0
+  assert MEASUREMENT_NAME in test_manager.measurements.keys()
+  assert test_manager.measurements[MEASUREMENT_NAME]['interval'] == INTERVAL
+  assert test_manager.measurements[MEASUREMENT_NAME]['function'](
+      static_state) == MEASURED_VALUE
+
+  # Test that adding a measurement with interval less-than or equal to
+  # zero reaises an exception
+  TEST_INTERVALS = [-10, 0]
+  for test_interval in TEST_INTERVALS:
+    with pytest.raises(Exception):
+      assert test_manager.add_measurement({
+          'name': MEASUREMENT_NAME,
+          'interval': test_interval,
+          'function': lambda state: MEASURED_VALUE
+      })
 
 
 def test_measurement_invervals():
@@ -61,111 +78,27 @@ def test_measurement_invervals():
 
   test_manager = m.MeasurementManager(static_state, reporter)
 
+  # log the value 0 at these intervals:
   test_intervals = [10, 13, 17, 20]
+  MEASURED_VALUE = 0
+
   for interval in test_intervals:
     test_manager.add_measurement({
         'name': f'Int_{interval}',
         'interval': interval,
-        'function': lambda state: 0
+        'function': lambda state: MEASURED_VALUE
     })
 
   TEST_STEPS = 100
   for i in range(TEST_STEPS):
-    test_manager.process(i, {})
+    test_manager.measure(i, {})
 
   # check data_store
   assert data_store == {
-      'Int_10': [{
-          'step': 0,
-          'value': 0
-      }, {
-          'step': 10,
-          'value': 0
-      }, {
-          'step': 20,
-          'value': 0
-      }, {
-          'step': 30,
-          'value': 0
-      }, {
-          'step': 40,
-          'value': 0
-      }, {
-          'step': 50,
-          'value': 0
-      }, {
-          'step': 60,
-          'value': 0
-      }, {
-          'step': 70,
-          'value': 0
-      }, {
-          'step': 80,
-          'value': 0
-      }, {
-          'step': 90,
-          'value': 0
-      }],
-      'Int_13': [{
-          'step': 0,
-          'value': 0
-      }, {
-          'step': 13,
-          'value': 0
-      }, {
-          'step': 26,
-          'value': 0
-      }, {
-          'step': 39,
-          'value': 0
-      }, {
-          'step': 52,
-          'value': 0
-      }, {
-          'step': 65,
-          'value': 0
-      }, {
-          'step': 78,
-          'value': 0
-      }, {
-          'step': 91,
-          'value': 0
-      }],
-      'Int_17': [{
-          'step': 0,
-          'value': 0
-      }, {
-          'step': 17,
-          'value': 0
-      }, {
-          'step': 34,
-          'value': 0
-      }, {
-          'step': 51,
-          'value': 0
-      }, {
-          'step': 68,
-          'value': 0
-      }, {
-          'step': 85,
-          'value': 0
-      }],
-      'Int_20': [{
-          'step': 0,
-          'value': 0
-      }, {
-          'step': 20,
-          'value': 0
-      }, {
-          'step': 40,
-          'value': 0
-      }, {
-          'step': 60,
-          'value': 0
-      }, {
-          'step': 80,
-          'value': 0
-      }]
+      f'Int_{k}': [{
+          'step': s,
+          'value': MEASURED_VALUE
+      } for s in range(0, TEST_STEPS, k)] for k in test_intervals
   }
 
 
@@ -174,75 +107,69 @@ def test_state_usage():
   i.e. the static and dynamic states are used appropriately """
   data_store = {}
   reporter = r.MemoryReporter(data_store).stepped()
-  static_state = {'Value1': 2., 'Value2': 4.}
+
+  # parameters of the test
+  VALUE1 = 2.
+  VALUE2 = 4.
+  INTERVAL = 3
+  TEST_STEPS = 5
+
+  static_state = {'Value1': VALUE1, 'Value2': VALUE2}
 
   test_manager = m.MeasurementManager(static_state, reporter)
 
   test_manager.add_measurement({
-      'name': 'Value1',
-      'interval': 3,
+      'name': 'Static1',
+      'interval': INTERVAL,
       'function': lambda x: x['Value1']
   })
   test_manager.add_measurement({
-      'name': 'Value2',
-      'interval': 3,
+      'name': 'Static2',
+      'interval': INTERVAL,
       'function': lambda x: x['Value2']
   })
   test_manager.add_measurement({
-      'name': 'sum_12',
-      'interval': 3,
+      'name': 'StaticSum',
+      'interval': INTERVAL,
       'function': lambda x: x['Value2'] + x['Value1']
   })
   test_manager.add_measurement({
-      'name': 'sum_13',
-      'interval': 3,
+      'name': 'DynamicSum',
+      'interval': INTERVAL,
       'function': lambda x: x['Value1'] + x['Value3']
   })
   test_manager.add_measurement({
-      'name': 'Value3',
-      'interval': 3,
+      'name': 'Dynamic3',
+      'interval': INTERVAL,
       'function': lambda x: x['Value3']
   })
 
-  TEST_STEPS = 5
   for step in range(TEST_STEPS):
     dynamic_state = {'Value3': step * step}
-    test_manager.process(step, dynamic_state)
+    test_manager.measure(step, dynamic_state)
+
+  # build the desired result to check against
+  steps_measured = range(0, TEST_STEPS, INTERVAL)
 
   assert data_store == {
-      'Value1': [{
-          'step': 0,
-          'value': 2.
-      }, {
-          'step': 3,
-          'value': 2.
-      }],
-      'Value2': [{
-          'step': 0,
-          'value': 4.
-      }, {
-          'step': 3,
-          'value': 4.
-      }],
-      'sum_12': [{
-          'step': 0,
-          'value': 6.
-      }, {
-          'step': 3,
-          'value': 6.
-      }],
-      'sum_13': [{
-          'step': 0,
-          'value': 2.
-      }, {
-          'step': 3,
-          'value': 11.
-      }],
-      'Value3': [{
-          'step': 0,
-          'value': 0
-      }, {
-          'step': 3,
-          'value': 9
-      }]
+      'Static1': [{
+          'step': step,
+          'value': VALUE1
+      } for step in steps_measured],
+      'Static2': [{
+          'step': step,
+          'value': VALUE2
+      } for step in steps_measured],
+      'StaticSum': [{
+          'step': step,
+          'value': VALUE1 + VALUE2
+      } for step in steps_measured],
+      'DynamicSum': [{
+          'step': step,
+          'value': VALUE1 + step * step
+      } for step in steps_measured],
+      'Dynamic3': [{
+          'step': step,
+          'value': step * step
+      } for step in steps_measured]
   }

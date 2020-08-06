@@ -15,6 +15,6 @@
 # limitations under the License.
 """Measurement manager interface and implementations."""
 
-from uv.manager.manager import MeasurementManager
+from uv.manager.impl import MeasurementManager
 
 __all__ = ["MeasurementManager"]

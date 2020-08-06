@@ -16,7 +16,7 @@
 """The MeasurementManager class, which conducts and reports on measurements
 which may be measured at varying intervals through training."""
 
-from typing import Dict, Iterable, List, Any, Union, Callable
+from typing import Dict, Iterable, List, Any, Union, Callable, Optional
 from uv.reporter import AbstractReporter
 
 
@@ -60,38 +60,36 @@ class MeasurementManager:
                               measured value
     """
     name = measurement_spec['name']
+
+    if measurement_spec['interval'] <= 0:
+      raise ValueError(
+          'measurement_spec[\'interval\'] must be greater than zero')
+
     self.measurements[name] = {
         'interval': measurement_spec['interval'],
         'function': measurement_spec['function']
     }
 
-  def process(self, step: int, dynamic_state: Dict[str, Any]):
+  def measure(self,
+              step: int,
+              dynamic_state: Dict[str, Any],
+              measurement_list: Optional[Iterable[str]] = None):
     """ At a given step, decide which measurements need to be
     performed at this step and perform them
 
     Args:
       step: Integer, the number of the current step
-      dynamic_stat: Dict, the state variables necessary to perform the
+      dynamic_state: Dict, the state variables necessary to perform the
                     measurement
+      measurement_list: Iterable[str], the list of measurements to make this
+                        step.
+                        If not provided (more common behavior), report the
+                        measurements required by the measurements' intervals.
     """
 
-    to_measure = self.required_measurements(step)
-
-    self.perform_specified_measurements(step, dynamic_state, to_measure)
-
-  def required_measurements(self, step: int) -> Iterable[str]:
-    """ Returns an iterable of measurement names which are to be
-    performed a the given step """
-
-    for name, spec in self.measurements.items():
-      if step % spec['interval'] == 0:
-        yield name
-
-  def perform_specified_measurements(self, step: int, dynamic_state: Dict[str,
-                                                                          Any],
-                                     measurement_list: Iterable[str]):
-    """ Regardless of step, performs the measurements specified
-    by measurement_list and reports them """
+    # Add measurements required by this step to the specified measurements
+    if measurement_list is None:
+      measurement_list = self.triggered(step)
 
     full_state = {**self.static_state, **dynamic_state}
 
@@ -104,3 +102,11 @@ class MeasurementManager:
 
     if len(measurements) > 0:
       self.reporter.report_all(step, measurements)
+
+  def triggered(self, step: int) -> Iterable[str]:
+    """ Returns an iterable of measurement names which are to be
+    performed a the given step """
+
+    for name, spec in self.measurements.items():
+      if step % spec['interval'] == 0:
+        yield name
