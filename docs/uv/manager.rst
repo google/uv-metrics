@@ -39,7 +39,7 @@ dictionary.  For example:
                                   'interval': 10,
                                   'function': lambda state: l2norm(state['params']}))
 
-Then, during training, we can call the `process` function, but we need to pass
+Then, during training, we can call the `measure` function, but we need to pass
 the objects needed for measurements which vary during traning, e.g.
 
 .. code-block:: python
@@ -48,15 +48,25 @@ the objects needed for measurements which vary during traning, e.g.
         optimizer_state = do_train_step()
 
         current_dict = {'params': optimizer_state.params}
-        oscilloscope.process(step, current_dict)
+        oscilloscope.measure(step, current_dict)
 
 If we want to perform a measurement at any time (say outside the normal
-schedule), we can use the `perform_specified_measurements` method as follows:
+schedule), we can use the same `measure` method, but now we must provide the
+argument `measurement_list` as follows:
 
 .. code-block:: python
 
-    oscilloscope.perform_specified_measurements(step, current_dict,
-                                                ['test_acc'])
+    oscilloscope.measure(step, current_dict, measurement_list=['test_acc'])
+
+This will measure, in the above case, `test_acc`, regardless of what the
+corresponding measurement interval and step are.
+
+.. warning::
+    When you call `.measure()` with an explicit `measurement_list`, the manager
+    will only measure those measurements in the list, and will NOT go through
+    and check which measurements to perform based on the measurement-intervals.
+    If you want to measure those as well, you must call `.measure()` again, with
+    no `measurement_list` provided.
 
 Indices and tables
 ==================

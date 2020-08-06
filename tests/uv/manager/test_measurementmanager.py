@@ -173,3 +173,32 @@ def test_state_usage():
           'value': step * step
       } for step in steps_measured]
   }
+
+
+def test_force_measure():
+  """ Tests that the measurement manager handles forced measurements, i.e.
+  measurements provided as a measurement_list argument, properly """
+
+  data_store = {}
+  reporter = r.MemoryReporter(data_store).stepped()
+
+  STATIC1 = 3.14
+  MEASURE_STEP = 4
+
+  static_state = {'STATIC1': STATIC1}
+  test_manager = m.MeasurementManager(static_state, reporter)
+
+  test_manager.add_measurement({
+      'name': "STATIC",
+      'interval': 3,
+      'function': lambda x: x['STATIC1']
+  })
+  test_manager.add_measurement({
+      'name': "NOTMEASURED",
+      'interval': 3,
+      'function': lambda x: 10.
+  })
+
+  test_manager.measure(MEASURE_STEP, {}, ['STATIC'])
+
+  assert data_store == {'STATIC': [{'step': MEASURE_STEP, 'value': STATIC1}]}
