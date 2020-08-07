@@ -22,7 +22,7 @@ pip install uv-metrics
 ```
 
 Full documentation for UV lives at [Read The
-Docs](https://uvmetrics.readthedocs.io/en/latest).
+Docs](https://uv-metrics.readthedocs.io/en/latest).
 
 ## Disclaimer
 
