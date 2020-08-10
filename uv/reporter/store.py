@@ -54,8 +54,12 @@ class LambdaReporter(AbstractReporter):
 
   Args:
     report: Function called whenever reporter.report(step, k, v) is called.
-    report_all: Function called whenever reporter.reporter_all(step, m) is
+    report_all: Function called whenever reporter.report_all(step, m) is
                 called.
+    report_param: Function called whenever reporter.report_param(k, v) is
+                  called.
+    report_params: Function called whenever reporter.report_params(m) is
+                   called.
     close: If supplied, this no-arg function will get called by this instance's
            `close` method.
 
@@ -66,14 +70,30 @@ class LambdaReporter(AbstractReporter):
                                          None]] = None,
                report_all: Optional[Callable[[int, Dict[t.MetricKey, t.Metric]],
                                              None]] = None,
+               report_param: Optional[Callable[[str, str], None]] = None,
+               report_params: Optional[Callable[[Dict[str, str]], None]] = None,
                close: Optional[Callable[[], None]] = None):
     if report is None and report_all is None:
       raise ValueError(
           "Must supply one of `report` and `report_all` to `LambdaReporter`.")
 
+    self._reportparam = report_param
+    self._reportparams = report_params
     self._report = report
     self._reportall = report_all
     self._close = close
+
+  def report_param(self, k: str, v: str) -> None:
+    if self._reportparam is None:
+      super().report_param(k, v)
+    else:
+      self._reportparam(k, v)
+
+  def report_params(self, m: Dict[str, str]) -> None:
+    if self._reportparams is None:
+      super().report_params(m)
+    else:
+      self._reportparams(m)
 
   def report_all(self, step, m):
     if self._reportall is None:
@@ -132,11 +152,23 @@ class MemoryReporter(AbstractReporter):
 
   """
 
-  def __init__(self, m: Optional[Dict[str, List[t.Metric]]] = None):
+  def __init__(self,
+               m: Optional[Dict[str, List[t.Metric]]] = None,
+               params_store: Optional[Dict[str, str]] = None):
     if m is None:
       m = {}
 
+    if params_store is None:
+      params_store = {}
+
     self._m = m
+    self._params = params_store
+
+  def report_param(self, k: str, v: str) -> None:
+    self._params[k] = v
+
+  def report_params(self, m: Dict[str, str]) -> None:
+    self._params.update({**m})
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
     for k, v in m.items():

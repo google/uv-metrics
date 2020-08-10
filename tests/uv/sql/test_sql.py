@@ -19,6 +19,7 @@ from contextlib import closing
 
 import uv.sql.reporter as sr
 import uv.sql.util as u
+from sqlalchemy.orm import sessionmaker
 
 import pytest
 
@@ -57,24 +58,32 @@ def test_rep_string():
   assert "params='None'" in str(metric)
 
 
-def test_sql_roundtrip(tmp_path):
+def test_of_sql_roundtrip(tmp_path):
   engine = u.sqlite_engine(str(tmp_path))
+  sm = u.session_maker(engine)
 
-  # you can't make a reporter with an engine pointing to a nonexistent DB:
+  # you can't make a reporter with an engine (or sessionmaker) pointing to a
+  # nonexistent DB:
   with pytest.raises(Exception):
     sr.SQLReporter(engine, sr.Experiment(id=10), 0)
+
+  with pytest.raises(Exception):
+    sr.SQLReporter(sm, sr.Experiment(id=10), 0)
 
   # Same goes for reader.
   with pytest.raises(Exception):
     sr.SQLReader(engine, sr.Experiment(id=10), 0)
 
+  with pytest.raises(Exception):
+    sr.SQLReader(sm, sr.Experiment(id=10), 0)
+
   sr.create_tables(engine)
-  experiment = sr.new_experiment(engine, {"learning_rate": 0.01})
 
-  with closing(sr.SQLReporter(engine, experiment, 0)) as reporter:
+  experiment = sr.new_experiment(sm, {"learning_rate": 0.01})
+
+  with closing(sr.SQLReporter(sm, experiment, 0)) as reporter:
     with closing(reporter.reader()) as reader:
-      with closing(sr.SQLReader(engine, experiment, 0)) as reader2:
-
+      with closing(sr.SQLReader(sm, experiment, 0)) as reader2:
         reporter.report_all(0, {"a": 1})
         reporter.report_all(1, {"a": 2, "b": 3})
         reporter.report_all(2, {"b": 4})

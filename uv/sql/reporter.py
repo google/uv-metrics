@@ -21,7 +21,7 @@ https://source.cloud.google.com/research-3141/tf2-jax-notebooks/+/master:experim
 """
 
 from itertools import groupby
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 import uv.reader.base as rb
 import uv.sql.util as u
@@ -30,7 +30,6 @@ from sqlalchemy import JSON, REAL, Column, Integer, String
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.query import Query
 from uv.reporter.base import AbstractReporter
 
 Base = declarative_base()
@@ -75,9 +74,10 @@ class Metric(Base):
     return u.rep_string(self)
 
 
-def new_experiment(engine, config: Dict[str, Any]) -> Experiment:
+def new_experiment(e: Union[Engine, sessionmaker],
+                   config: Dict[str, Any]) -> Experiment:
   """Generates a new experiment."""
-  session = sessionmaker(bind=engine)()
+  session = u.session_maker(e)()
   exp = Experiment(params=config)
   session.add(exp)
   session.commit()
@@ -91,16 +91,16 @@ creation, but that's coming.
 
   """
 
-  def __init__(self, engine: Engine, experiment: Experiment, run_id: int):
-    if not u.sqlite_file_exists(engine):
+  def __init__(self, e: Union[Engine, sessionmaker], experiment: Experiment,
+               run_id: int):
+    self._make_session = u.session_maker(e)
+    self._engine = self._make_session.kw["bind"]
+    if not u.sqlite_file_exists(self._engine):
       raise Exception(
-          f"{engine.url} doesn't exist! Create the database before creating a reporter."
+          f"{self._engine.url} doesn't exist! Create the database before creating a reporter."
       )
-
-    self._engine = engine
     self._experiment = experiment
     self._run_id = run_id
-    self._make_session = sessionmaker(bind=engine)
 
   def _metric(self, step: int, k: str, v: float) -> Metric:
     """Generates an instance of Metric tied to this specific reporter's
@@ -119,7 +119,7 @@ creation, but that's coming.
     session.commit()
 
   def reader(self) -> rb.AbstractReader:
-    return SQLReader(self._engine, self._experiment, self._run_id)
+    return SQLReader(self._make_session, self._experiment, self._run_id)
 
 
 class SQLReader(rb.AbstractReader, rb.IterableReader):
@@ -128,22 +128,22 @@ class SQLReader(rb.AbstractReader, rb.IterableReader):
   """
 
   def __init__(self,
-               engine: Engine,
+               e: Union[Engine, sessionmaker],
                experiment: Experiment,
                run_id: int,
                step_key: Optional[str] = None):
-    if not u.sqlite_file_exists(engine):
+    self._make_session = u.session_maker(e)
+    self._engine = self._make_session.kw["bind"]
+    if not u.sqlite_file_exists(self._engine):
       raise Exception(
-          f"{engine.url} doesn't exist! Create the database before creating a reader."
+          f"{self._engine.url} doesn't exist! Create the database before creating a reader."
       )
 
     if step_key is None:
       step_key = "step"
 
-    self._engine = engine
     self._experiment = experiment
     self._run_id = run_id
-    self._make_session = sessionmaker(bind=engine)
 
   def keys(self) -> Iterable[t.Metric]:
     """Returns a list of all keys in the DB for this particular experiment and
