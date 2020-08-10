@@ -12,6 +12,7 @@
 #
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
 
@@ -40,7 +41,11 @@ extensions = [
     'sphinx.ext.viewcode',
 ]
 
-intersphinx_mapping = {'python': ('https://docs.python.org/3/', None)}
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3/', None),
+    'fs': ('https://pyfilesystem.readthedocs.io/en/latest/', None),
+    'casfs': ('https://casfs.readthedocs.io/en/latest/', None),
+}
 
 source_suffix = {'.rst': 'restructuredtext', '.txt': 'restructuredtext'}
 
