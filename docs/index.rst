@@ -41,9 +41,9 @@ If UV Metrics helps you in your research, pleae consider citing the repository:
     year = {2020},
   }
 
-In the above bibtex entry, names are in alphabetical order, the version number
-is intended to be that of the latest tag on github, and the year corresponds to
-the project's open-source release.
+In the above bibtex entry, the version number is intended to be that of the
+latest tag on github and the year corresponds to the project's open-source
+release.
 
 .. toctree::
    :maxdepth: 2
