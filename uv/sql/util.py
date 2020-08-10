@@ -18,11 +18,12 @@
 """
 
 import os
+from typing import Union
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.engine.url import URL
-from typing import Union
+from sqlalchemy.orm import sessionmaker
 
 
 def sqlite_engine(location: str, verbose=False) -> Engine:
@@ -33,6 +34,17 @@ def sqlite_engine(location: str, verbose=False) -> Engine:
     location = f"{location}.db"
 
   return create_engine(f'sqlite:///{location}', echo=verbose)
+
+
+def session_maker(e: Union[Engine, sessionmaker]) -> sessionmaker:
+  """Returns a session maker from the specified Engine, or acts as identity if e
+  is already a sessionmaker.
+
+  """
+  if isinstance(e, sessionmaker):
+    return e
+
+  return sessionmaker(bind=e)
 
 
 def sqlite_file_exists(arg: Union[Engine, URL]) -> bool:
