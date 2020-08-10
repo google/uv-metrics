@@ -1,6 +1,6 @@
 # MLFlowReporter Tutorial
 
-This diectory contains a very simple demo of using UV's MLFLowReporter to log metrics
+This directory contains a very simple demo of using UV's MLFLowReporter to log metrics
 to an [MLFLow](https://mlflow.org) backend.
 
 To run this tutorial:
@@ -25,4 +25,4 @@ them in the `uv.start_run()` method. You can also use an existing MLFlow trackin
 server by setting the `MLFLOW_TRACKING_URI` environment variable.
 
 More information on MLFlow tracking can be found
-[here](https://mlflow.org/docs/latest/tracking.html)
+[here](https://mlflow.org/docs/latest/tracking.html).
