@@ -15,8 +15,6 @@
 # limitations under the License.
 """MLFlow reporter that conforms to UV's reporter interface."""
 
-from typing import Dict, List
-
 import mlflow as mlf
 from mlflow.entities import Param, Metric, RunTag
 import time
