@@ -91,6 +91,10 @@ def test_global_reporter():
 
 
 def test_start_run(monkeypatch):
+  # this is needed because the active experiment in mlflow is sticky, so if
+  # an earlier test sets this, then things fail here when we don't use
+  # an explicit experiment
+  mlf.set_experiment(mlf.entities.Experiment.DEFAULT_EXPERIMENT_NAME)
 
   with tempfile.TemporaryDirectory() as tmpdir:
 
