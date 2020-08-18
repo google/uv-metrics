@@ -98,11 +98,7 @@ def test_start_run(monkeypatch):
 
   with tempfile.TemporaryDirectory() as tmpdir:
 
-    import os
     mlf.set_tracking_uri(f'file:{tmpdir}/foo')
-    assert mlf.get_tracking_uri() == f'file:{tmpdir}/foo'
-    assert os.path.exists(tmpdir)
-    tmp = os.path.join(tmpdir, 'foo')
 
     # no run should be active initially
     assert mlf.active_run() is None
