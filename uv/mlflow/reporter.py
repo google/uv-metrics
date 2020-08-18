@@ -15,9 +15,12 @@
 # limitations under the License.
 """MLFlow reporter that conforms to UV's reporter interface."""
 
-from typing import Dict
+from typing import Dict, List
 
-import mlflow
+import mlflow as mlf
+from mlflow.entities import Param, Metric, RunTag
+import time
+from typing import Optional, Dict, List
 import uv.reporter.base as b
 import uv.types as t
 
@@ -26,16 +29,34 @@ class MLFlowReporter(b.AbstractReporter):
   """Reporter implementation that logs metrics to mlflow."""
 
   def __init__(self):
-    pass
+    self._client = mlf.tracking.MlflowClient()
+
+  def _log_batch(
+      self,
+      run_id: Optional[str] = None,
+      metrics: Optional[List[Metric]] = None,
+      params: Optional[List[Param]] = None,
+      tags: Optional[List[RunTag]] = None,
+  ) -> None:
+    run_id = run_id or mlf.active_run().info.run_id
+    metrics = metrics or []
+    params = params or []
+    tags = tags or []
+
+    self._client.log_batch(run_id=run_id,
+                           metrics=metrics,
+                           params=params,
+                           tags=tags)
 
   def report_param(self, k: str, v: str) -> None:
-    mlflow.log_param(k, v)
+    self.report_params({k: v})
 
   def report_params(self, m: Dict[str, str]) -> None:
-    mlflow.log_params(m)
+    self._log_batch(params=[Param(k, str(v)) for k, v in m.items()])
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
-    mlflow.log_metrics(m, step=step)
+    ts = int(time.time() * 1000)
+    self._log_batch(metrics=[Metric(k, v, ts, step) for k, v in m.items()])
 
   def report(self, step: int, k: t.MetricKey, v: t.Metric) -> None:
-    mlflow.log_metric(key=k, value=v, step=step)
+    self.report_all(step=step, m={k: v})

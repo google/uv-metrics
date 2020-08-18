@@ -46,7 +46,7 @@ def set_reporter(r: AbstractReporter) -> AbstractReporter:
 def active_reporter(r: AbstractReporter):
   old_reporter = _active_reporter
   globals()['_active_reporter'] = r
-  yield
+  yield r
   globals()['_active_reporter'] = old_reporter
 
 
