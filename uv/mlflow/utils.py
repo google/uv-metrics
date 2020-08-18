@@ -16,6 +16,7 @@
 """Utilities for MLFlow reporter"""
 
 import collections
+from typing import Optional, Dict, List, Union
 
 
 def flatten(d: Dict[str, Union[str, Dict]],
