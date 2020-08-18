@@ -20,6 +20,15 @@ import tempfile
 import uv
 from uv.mlflow.reporter import MLFlowReporter
 
+# this is a simple invalid key for mlflow to test our sanitizer
+INVALID_KEY = '+' + 'x' * (mlf.utils.validation.MAX_ENTITY_KEY_LENGTH)
+SANITIZED_KEY = uv.mlflow.reporter.INVALID_CHAR_REPLACEMENT + 'x' * (
+    mlf.utils.validation.MAX_ENTITY_KEY_LENGTH - 1)
+
+INVALID_PARAM_VALUE = 'z' * (mlf.utils.validation.MAX_PARAM_VAL_LENGTH + 1)
+SANITIZED_PARAM_VALUE = INVALID_PARAM_VALUE[:mlf.utils.validation.
+                                            MAX_PARAM_VAL_LENGTH]
+
 
 def _reset_experiment():
   # this is needed because the active experiment in mlflow is sticky, so if
@@ -43,7 +52,11 @@ def test_report_params():
         MLFlowReporter()) as r:
       assert r is not None
 
-      params = {'a': 3, 'b': 'string_param'}
+      params = {
+          'a': 3,
+          'b': 'string_param',
+          INVALID_KEY: INVALID_PARAM_VALUE,
+      }
       r.report_params(params)
 
       assert mlf.active_run() == active_run
@@ -54,6 +67,10 @@ def test_report_params():
       assert run is not None
 
       for k, v in params.items():
+        if k == INVALID_KEY:
+          k = SANITIZED_KEY
+        if v == INVALID_PARAM_VALUE:
+          v = SANITIZED_PARAM_VALUE
         p = run.data.params
         assert k in p
         assert p[k] == str(v)
@@ -109,13 +126,15 @@ def test_report_all():
           'step': 1,
           'm': {
               'a': 3,
-              'b': 3.141
+              'b': 3.141,
+              INVALID_KEY: 1.23,
           }
       }, {
           'step': 2,
           'm': {
               'a': 6,
-              'b': 6.282
+              'b': 6.282,
+              INVALID_KEY: 2.46,
           }
       }]
 
@@ -134,6 +153,8 @@ def test_report_all():
       metric_data = {}
       # check that the metrics are in the run data
       for k, v in steps[0]['m'].items():
+        if k == INVALID_KEY:
+          k = SANITIZED_KEY
         assert k in metrics
         metric_data[k] = {
             x.step: x.value
@@ -143,6 +164,8 @@ def test_report_all():
       for s in steps:
         cur_step = s['step']
         for k, v in s['m'].items():
+          if k == INVALID_KEY:
+            k = SANITIZED_KEY
           assert metric_data[k][cur_step] == v
 
 

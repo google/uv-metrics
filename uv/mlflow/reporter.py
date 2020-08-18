@@ -17,11 +17,33 @@
 
 import mlflow as mlf
 from mlflow.entities import Param, Metric, RunTag
+import re
 import time
 from typing import Optional, Dict, List, Union
 import uv.reporter.base as b
 import uv.types as t
 from uv.mlflow import utils
+
+INVALID_CHAR_REPLACEMENT = '-'
+
+# mlflow restricts these strings
+_INVALID_PARAM_AND_METRIC_NAMES = re.compile('[^/\w.\- ]')
+
+
+def _truncate_key(k: str) -> str:
+  '''truncates keys for mlflow, as there are strict limits for key length'''
+  return k[:mlf.utils.validation.MAX_ENTITY_KEY_LENGTH]
+
+
+def sanitize_key(k: str) -> str:
+  '''sanitizes keys for mlflow to conform to mlflow restrictions'''
+  return _INVALID_PARAM_AND_METRIC_NAMES.sub(INVALID_CHAR_REPLACEMENT,
+                                             _truncate_key(k))
+
+
+def _sanitize_param_value(v: str):
+  '''sanitizes parameter values to conform to mlflow restrictions'''
+  return v[:mlf.utils.validation.MAX_PARAM_VAL_LENGTH]
 
 
 class MLFlowReporter(b.AbstractReporter):
@@ -51,12 +73,16 @@ class MLFlowReporter(b.AbstractReporter):
     self.report_params({k: v})
 
   def report_params(self, m: Dict[str, Union[str, Dict]]) -> None:
-    m = utils.flatten(m)
-    self._log_batch(params=[Param(k, str(v)) for k, v in m.items()])
+    flat_m = utils.flatten(m)
+    self._log_batch(params=[
+        Param(sanitize_key(k), _sanitize_param_value(str(v)))
+        for k, v in flat_m.items()
+    ])
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
     ts = int(time.time() * 1000)
-    self._log_batch(metrics=[Metric(k, v, ts, step) for k, v in m.items()])
+    self._log_batch(
+        metrics=[Metric(sanitize_key(k), v, ts, step) for k, v in m.items()])
 
   def report(self, step: int, k: t.MetricKey, v: t.Metric) -> None:
     self.report_all(step=step, m={k: v})

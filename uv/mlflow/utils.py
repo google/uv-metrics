@@ -16,6 +16,7 @@
 """Utilities for MLFlow reporter"""
 
 import collections
+from typing import Dict, Union, List, Any
 
 
 def flatten(d: Dict[str, Union[str, Dict]],
@@ -24,7 +25,7 @@ def flatten(d: Dict[str, Union[str, Dict]],
   """Recursively flattens a nested dictionary into a dictionary
   whose values are not mappings, i.e., a flat dictionary"""
 
-  items = []
+  items: List[Any] = []
 
   for k, v in d.items():
     new_key = parent_key + sep + k if parent_key else k

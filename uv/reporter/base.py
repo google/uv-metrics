@@ -18,7 +18,7 @@ reporters together into compound reporters.
 
 """
 from abc import ABCMeta
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Union
 
 import uv.reader.base as rb
 import uv.types as t
@@ -45,7 +45,7 @@ class AbstractReporter(metaclass=ABCMeta):
     """
     return None
 
-  def report_params(self, m: Dict[str, str]) -> None:
+  def report_params(self, m: Dict[str, Union[str, Dict]]) -> None:
     """Accepts a dict of parameter name -> value, and logs these as parameters
     alongside the reported metrics.
 
@@ -200,11 +200,9 @@ def stepped_reporter(base: AbstractReporter,
   is useful for keeping track of each metric's timestamp.
 
   """
-  if step_key is None:
-    step_key = "step"
 
   def _augment(step: int, v: Any) -> Dict[str, Any]:
-    return {step_key: step, "value": v}
+    return {step_key or "step": step, "value": v}
 
   return MapValuesReporter(base, _augment)
 
@@ -231,7 +229,7 @@ class FilterValuesReporter(AbstractReporter):
   def report_param(self, k: str, v: str) -> None:
     return self._base.report_param(k, v)
 
-  def report_params(self, m: Dict[str, str]) -> None:
+  def report_params(self, m: Dict[str, Union[str, Dict]]) -> None:
     return self._base.report_params(m)
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
@@ -280,7 +278,7 @@ class MapValuesReporter(AbstractReporter):
   def report_param(self, k: str, v: str) -> None:
     return self._base.report_param(k, v)
 
-  def report_params(self, m: Dict[str, str]) -> None:
+  def report_params(self, m: Dict[str, Union[str, Dict]]) -> None:
     return self._base.report_params(m)
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
@@ -339,7 +337,7 @@ class PrefixedReporter(AbstractReporter):
   def report_param(self, k: str, v: str) -> None:
     return self._base.report_param(k, v)
 
-  def report_params(self, m: Dict[str, str]) -> None:
+  def report_params(self, m: Dict[str, Union[str, Dict]]) -> None:
     return self._base.report_params(m)
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
@@ -350,7 +348,10 @@ class PrefixedReporter(AbstractReporter):
     self._base.report(step, newk, v)
 
   def reader(self) -> Optional[rb.AbstractReader]:
-    return rb.PrefixedReader(self._base.reader(), self._prefix)
+    base_reader = self._base.reader()
+    if base_reader is None:
+      return None
+    return rb.PrefixedReader(base_reader, self._prefix)
 
   def close(self) -> None:
     self._base.close()
@@ -373,7 +374,7 @@ class SuffixedReporter(AbstractReporter):
   def report_param(self, k: str, v: str) -> None:
     return self._base.report_param(k, v)
 
-  def report_params(self, m: Dict[str, str]) -> None:
+  def report_params(self, m: Dict[str, Union[str, Dict]]) -> None:
     return self._base.report_params(m)
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
@@ -384,7 +385,10 @@ class SuffixedReporter(AbstractReporter):
     self._base.report(step, newk, v)
 
   def reader(self) -> Optional[rb.AbstractReader]:
-    return rb.SuffixedReader(self._base.reader(), self._suffix)
+    base_reader = self._base.reader()
+    if base_reader is None:
+      return None
+    return rb.SuffixedReader(base_reader, self._suffix)
 
   def close(self) -> None:
     self._base.close()
@@ -411,7 +415,7 @@ class ThunkReporter(AbstractReporter):
   def report_param(self, k: str, v: str) -> None:
     return self._base.report_param(k, v)
 
-  def report_params(self, m: Dict[str, str]) -> None:
+  def report_params(self, m: Dict[str, Union[str, Dict]]) -> None:
     return self._base.report_params(m)
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
