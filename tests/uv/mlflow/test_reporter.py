@@ -14,10 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numbers
+import numpy as np
 import mlflow as mlf
 import tempfile
+import tensorflow as tf
 
 import uv
+import uv.util as u
 from uv.mlflow.reporter import MLFlowReporter
 
 # this is a simple invalid key for mlflow to test our sanitizer
@@ -128,6 +132,9 @@ def test_report_all():
               'a': 3,
               'b': 3.141,
               INVALID_KEY: 1.23,
+              'c': 'xyz',
+              'd': '2.7',
+              'e': tf.constant([0.2]),
           }
       }, {
           'step': 2,
@@ -135,6 +142,9 @@ def test_report_all():
               'a': 6,
               'b': 6.282,
               INVALID_KEY: 2.46,
+              'c': np.ones(4),
+              'd': np.array([.5]),
+              'e': tf.constant([0.1, 0.2])
           }
       }]
 
@@ -166,6 +176,11 @@ def test_report_all():
         for k, v in s['m'].items():
           if k == INVALID_KEY:
             k = SANITIZED_KEY
+          if not isinstance(v, numbers.Number):
+            try:
+              v = float(u.to_metric(v))
+            except:
+              v = 0
           assert metric_data[k][cur_step] == v
 
 

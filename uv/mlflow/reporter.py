@@ -15,13 +15,16 @@
 # limitations under the License.
 """MLFlow reporter that conforms to UV's reporter interface."""
 
+import logging
 import mlflow as mlf
 from mlflow.entities import Param, Metric, RunTag
+import numbers
 import re
 import time
 from typing import Optional, Dict, List, Union
 import uv.reporter.base as b
 import uv.types as t
+import uv.util as u
 from uv.mlflow import utils
 
 INVALID_CHAR_REPLACEMENT = '-'
@@ -44,6 +47,26 @@ def sanitize_key(k: str) -> str:
 def _sanitize_param_value(v: str):
   '''sanitizes parameter values to conform to mlflow restrictions'''
   return v[:mlf.utils.validation.MAX_PARAM_VAL_LENGTH]
+
+
+def _sanitize_metric_value(k: t.MetricKey, v: t.Metric) -> t.Metric:
+  '''sanitizes a metric value, if non-numeric, logs a warning and returns 0'''
+  if not isinstance(v, numbers.Number):
+    try:
+      v = float(u.to_metric(v))
+    except Exception as e:
+      logging.warning(
+          f'metric {k} has a non-numeric value {v}, logging 0 as placeholder')
+      v = 0
+  return v
+
+
+def _sanitize_metrics(
+    d: Dict[t.MetricKey, t.Metric]) -> Dict[t.MetricKey, t.Metric]:
+  '''sanitizes keys to conform to mlflow restrictions, and
+  logs a warning for non-float metric values, replacing with zeros'''
+
+  return {sanitize_key(k): _sanitize_metric_value(k, v) for k, v in d.items()}
 
 
 class MLFlowReporter(b.AbstractReporter):
@@ -80,9 +103,9 @@ class MLFlowReporter(b.AbstractReporter):
     ])
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
+    m = _sanitize_metrics(m)
     ts = int(time.time() * 1000)
-    self._log_batch(
-        metrics=[Metric(sanitize_key(k), v, ts, step) for k, v in m.items()])
+    self._log_batch(metrics=[Metric(k, v, ts, step) for k, v in m.items()])
 
   def report(self, step: int, k: t.MetricKey, v: t.Metric) -> None:
     self.report_all(step=step, m={k: v})
