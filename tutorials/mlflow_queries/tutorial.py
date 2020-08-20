@@ -16,11 +16,8 @@
 '''A MLFlow+UV tutorial showing how to query results from multiple runs.'''
 
 import getpass
-import math
 import mlflow
 import numpy as np
-import sys
-from typing import Callable
 import uv
 from uv.mlflow.reporter import MLFlowReporter
 

@@ -78,15 +78,16 @@ plotting outside of the mlflow ui server.
 
 In the `tutorial.py` code, in the `_run_experiments` method, you can
 see that we perform several runs using different parameters. Here we configure
-our MLFlow experiment name and our run name using the UV method `uv.start_run`:
+our MLFlow experiment name and our run name using the UV method uv.start_run:
 
 .. code-block:: python
-def _run_experiments(experiment_name: str):
-  for i, p in enumerate(PARAMETERS):
-    with uv.start_run(
+
+  def _run_experiments(experiment_name: str):
+    for i, p in enumerate(PARAMETERS):
+      with uv.start_run(
         experiment_name=experiment_name,
         run_name=f'run_{i}',
-    ):
+      ):
       uv.report_params(p)
       _compute(**p)
 
@@ -106,6 +107,7 @@ instance, then using that to call `search_runs` to find just
 the runs we are interested in:
 
 .. code-block:: python
+
   client = mlflow.tracking.MlflowClient()
   experiment = client.get_experiment_by_name(experiment_name)
 
