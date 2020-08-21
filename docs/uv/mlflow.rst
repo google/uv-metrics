@@ -81,12 +81,13 @@ see that we perform several runs using different parameters. Here we configure
 our MLFlow experiment name and our run name using the UV method ``uv.start_run``:
 
 .. code-block:: python
-def _run_experiments(experiment_name: str):
-  for i, p in enumerate(PARAMETERS):
-    with uv.start_run(
+
+  def _run_experiments(experiment_name: str):
+    for i, p in enumerate(PARAMETERS):
+      with uv.start_run(
         experiment_name=experiment_name,
         run_name=f'run_{i}',
-    ):
+      ):
       uv.report_params(p)
       _compute(**p)
 
@@ -95,7 +96,7 @@ You may also specify the experiment name using the ``MLFLOW_EXPERIMENT_NAME``
 environment variable, and the run name using the ``MLFLOW_RUN_NAME`` environment
 variable. For more information, please see the
 `MLFlow documentation <https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.start_run>`_
-for more details. Please note that the method arguments take precedence over the
+. Please note that the method arguments take precedence over the
 environment variables, so you can always set them in your code and be sure that
 these will be used.
 
@@ -106,6 +107,7 @@ instance, then using that to call `search_runs` to find just
 the runs we are interested in:
 
 .. code-block:: python
+
   client = mlflow.tracking.MlflowClient()
   experiment = client.get_experiment_by_name(experiment_name)
 
@@ -118,7 +120,7 @@ the runs we are interested in:
 
 Here we pass an MLFlow query string, which has a SQL-like syntax. For more details
 on this query language, please see the
-`MLFlow documentation <https://www.mlflow.org/docs/latest/search-syntax.html>`_.
+`MLFlow search syntax documentation <https://www.mlflow.org/docs/latest/search-syntax.html>`_.
 
 Once we have the runs that match our query, we retrieve our metric data and convert
 it into numpy arrays for analysis and plotting, using the ``get_metric_history``

@@ -16,11 +16,9 @@
 '''A MLFlow+UV tutorial showing how to query results from multiple runs.'''
 
 import getpass
-import math
 import mlflow
 import numpy as np
-import sys
-from typing import Callable
+import os
 import uv
 from uv.mlflow.reporter import MLFlowReporter
 
@@ -44,8 +42,8 @@ By default, this will serve results at http://localhost:5000.
 More information on MLFlow tracking can be found at
 https://mlflow.org/docs/latest/tracking.html
 
-This tutorial will also create a plot called 'tutorial.png' of some of its metric
-data in your local directory.
+This tutorial will also create a plot called 'mlflow_query_tutorial.png' of some of its metric
+data in the repo docs directory if it is accessible, or in your local directory.
 '''
 
 # simple set of parameters for our runs
@@ -128,7 +126,14 @@ def main():
   plt.legend()
   plt.grid(True)
   plt.title('UV/MLFlow Tutorial')
-  plt.savefig('tutorial.png')
+
+  outdir = '../../docs/_static/img/'
+  if not os.path.exists(outdir):
+    outdir = '.'
+
+  outfile = os.path.join(outdir, 'mlflow_query_tutorial.png')
+  plt.savefig(outfile)
+  print(f'plot saved to {outfile}')
 
 
 if __name__ == '__main__':
