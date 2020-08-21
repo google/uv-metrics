@@ -65,20 +65,20 @@ We have a `short tutorial <https://github.com/google/uv-metrics/tree/matser/tuto
 that demonstrates the basics of logging, querying, and plotting using the MLFlow query
 api with UV reporting.
 
-Please note that this tutorial uses the `matplotlib <https://matplotlib.org>`_ and
+.. NOTE:: This tutorial uses the `matplotlib <https://matplotlib.org>`_ and
 `numpy <https://numpy.org>`_ packages.
 
 Similar to the above tutorial, this tutorial will create a local directory with your
-MLFlow data under `./mlruns`, and you can run a local mlflow server instance to view
+MLFlow data under ``./mlruns``, and you can run a local mlflow server instance to view
 your results in the same way.
 
 This tutorial also demonstrates how to use mlflow's query capabilities to
 search your run data and retrieve metric history data for analysis and
 plotting outside of the mlflow ui server.
 
-In the `tutorial.py` code, in the `_run_experiments` method, you can
+In the ``tutorial.py`` code, in the ``_run_experiments`` method, you can
 see that we perform several runs using different parameters. Here we configure
-our MLFlow experiment name and our run name using the UV method `uv.start_run`:
+our MLFlow experiment name and our run name using the UV method ``uv.start_run``:
 
 .. code-block:: python
 def _run_experiments(experiment_name: str):
@@ -91,16 +91,16 @@ def _run_experiments(experiment_name: str):
       _compute(**p)
 
 
-You may also specify the experiment name using the `MLFLOW_EXPERIMENT_NAME`
-environment variable, and the run name using the `MLFLOW_RUN_NAME` environment
+You may also specify the experiment name using the ``MLFLOW_EXPERIMENT_NAME``
+environment variable, and the run name using the ``MLFLOW_RUN_NAME`` environment
 variable. For more information, please see the
 `MLFlow documentation <https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.start_run>`_
 for more details. Please note that the method arguments take precedence over the
 environment variables, so you can always set them in your code and be sure that
 these will be used.
 
-After we have run our data generation code in the `_run_experiments()` call in
-the `main()` routine, we query a subset of our runs by first creating an
+After we have run our data generation code in the ``_run_experiments()`` call in
+the ``main()`` routine, we query a subset of our runs by first creating an
 `MLFLow client <https://mlflow.org/docs/latest/python_api/mlflow.tracking.html#mlflow.tracking.MlflowClient>`_
 instance, then using that to call `search_runs` to find just
 the runs we are interested in:
@@ -121,8 +121,8 @@ on this query language, please see the
 `MLFlow documentation <https://www.mlflow.org/docs/latest/search-syntax.html>`_.
 
 Once we have the runs that match our query, we retrieve our metric data and convert
-it into numpy arrays for analysis and plotting, using the `get_metric_history`
-MlflowClient method. As a simple example we then use `matplotlib` to plot this
-simple data and output it to a `.png` file.
+it into numpy arrays for analysis and plotting, using the ``get_metric_history``
+MlflowClient method. As a simple example we then use ``matplotlib`` to plot this
+simple data and output it to a ``.png`` file.
 
 .. image:: /_static/img/mlflow_query_tutorial.png
