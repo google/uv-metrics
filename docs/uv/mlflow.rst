@@ -2,7 +2,7 @@ MLFlow Reporting
 ================
 
 UV supports reporting to an `MLFlow <https://mlflow.org>`_ backend via the
-`uv.mlflow.reporter.MLFlowReporter` class. Using this reporter, you can
+``uv.mlflow.reporter.MLFlowReporter`` class. Using this reporter, you can
 easily log your parameters, tags, and metrics to a local directory or to your
 existing MLFlow backend:
 
@@ -22,27 +22,27 @@ existing MLFlow backend:
 
   main(steps=8, slope=1.0)
 
-Here we can see the steps needed to set up and use an `MLFlowReporter`. We
+Here we can see the steps needed to set up and use an ``MLFlowReporter``. We
 start an `MLFlow run <https://mlflow.org/docs/latest/tracking.html#concepts>`_ using
-`with uv.start_run()` so that our run will be properly closed when our code execution
-is finished. Then we create an MLFlowReporter and set it as active using `uv.active_reporter()`.
+``with uv.start_run()`` so that our run will be properly closed when our code execution
+is finished. Then we create an MLFlowReporter and set it as active using ``uv.active_reporter()``.
 Once we have done this, we are ready to store parameters and log metrics to our MLFlow backend.
 
-By default, this will create a directory `./mlruns` in your current folder and store
+By default, this will create a directory ``./mlruns`` in your current folder and store
 your metrics data there. To view the results in your browser, you can run an
-`mlflow ui` instance in your current folder:
+``mlflow ui`` instance in your current folder:
 
 .. code-block:: shell-session
 
   mlflow ui
 
-By default, this serves results at `http://localhost:5000`. Open this page in your browser
+By default, this serves results at ``http://localhost:5000``. Open this page in your browser
 and you should be able to view the results of your run.
 
 You can change the MLFlow experiment and run names by setting the environment
-variables `MLFLOW_EXPERIMENT_NAME` and `MLFLOW_RUN_NAME`, respectively, or you can set
-the `experiment_name` and `run_name` parameters  in the `uv.start_run()` method. You can
-also use an existing MLFlow tracking server by setting the `MLFLOW_TRACKING_URI` environment
+variables ``MLFLOW_EXPERIMENT_NAME`` and ``MLFLOW_RUN_NAME``, respectively, or you can set
+the ``experiment_name`` and ``run_name`` parameters  in the ``uv.start_run()`` method. You can
+also use an existing MLFlow tracking server by setting the ``MLFLOW_TRACKING_URI`` environment
 variable.
 
 Please see our `mlflow tutorial code <https://github.com/google/uv-metrics/tree/master/tutorials/mlflow>`_
@@ -65,8 +65,9 @@ We have a `short tutorial <https://github.com/google/uv-metrics/tree/matser/tuto
 that demonstrates the basics of logging, querying, and plotting using the MLFlow query
 api with UV reporting.
 
-.. NOTE:: This tutorial uses the `matplotlib <https://matplotlib.org>`_ and
-`numpy <https://numpy.org>`_ packages.
+.. NOTE::
+   This tutorial uses the `matplotlib <https://matplotlib.org>`_ and
+   `numpy <https://numpy.org>`_ packages.
 
 Similar to the above tutorial, this tutorial will create a local directory with your
 MLFlow data under ``./mlruns``, and you can run a local mlflow server instance to view
@@ -103,7 +104,7 @@ these will be used.
 After we have run our data generation code in the ``_run_experiments()`` call in
 the ``main()`` routine, we query a subset of our runs by first creating an
 `MLFLow client <https://mlflow.org/docs/latest/python_api/mlflow.tracking.html#mlflow.tracking.MlflowClient>`_
-instance, then using that to call `search_runs` to find just
+instance, then using that to call ``search_runs`` to find just
 the runs we are interested in:
 
 .. code-block:: python
