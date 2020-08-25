@@ -190,8 +190,7 @@ def test_start_run(monkeypatch):
     def mock_default(scopes=None, request=None, quota_project_id=None):
       return (google.auth.credentials.AnonymousCredentials(), None)
 
-    orig_default = google.auth.default
-    monkeypatch.setattr(google.auth, 'default', mock_default)
+    monkeypatch.setattr('google.auth.default', mock_default)
 
     cfg = {
         'experiment_name': 'foo',
