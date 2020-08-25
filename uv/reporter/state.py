@@ -17,7 +17,7 @@
 
 import os
 from contextlib import contextmanager
-import google.auth
+import google
 from typing import Dict, Optional
 
 import mlflow as mlf

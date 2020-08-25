@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import google.auth
+import google
 import google.cloud.storage
 import mlflow as mlf
 import os
