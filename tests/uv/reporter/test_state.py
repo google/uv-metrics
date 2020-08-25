@@ -187,7 +187,7 @@ def test_start_run(monkeypatch):
 
     # explicitly test case where no default or explicit gcp project is set
     def mock_default():
-      return object(), None
+      return google.auth.credentials.AnonymousCredentials(), None
 
     orig_default = google.auth.default
     monkeypatch.setattr(google.auth, 'default', mock_default)
