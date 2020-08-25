@@ -19,6 +19,7 @@ import google.cloud.storage
 import mlflow as mlf
 import os
 import pprint as pp
+import pytest
 import uv
 import uv.reporter.state as s
 import uv.reporter.store as r
@@ -186,8 +187,8 @@ def test_start_run(monkeypatch):
     monkeypatch.delenv('CLOUD_ML_JOB_ID')
 
     # explicitly test case where no default or explicit gcp project is set
-    def mock_default():
-      return google.auth.credentials.AnonymousCredentials(), None
+    def mock_default(scopes=None, request=None, quota_project_id=None):
+      return (google.auth.credentials.AnonymousCredentials(), None)
 
     orig_default = google.auth.default
     monkeypatch.setattr(google.auth, 'default', mock_default)
