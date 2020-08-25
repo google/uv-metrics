@@ -36,7 +36,7 @@ def test_report_params():
     mlflow_cfg = {
         'experiment_name': 'foo',
         'run_name': 'bar',
-        'artifact_location': 'gs://foo/bar',
+        'artifact_location': '/foo/bar',
     }
 
     with uv.start_run(**mlflow_cfg) as active_run, uv.active_reporter(
@@ -67,7 +67,7 @@ def test_report_param():
     mlflow_cfg = {
         'experiment_name': 'foo',
         'run_name': 'bar',
-        'artifact_location': 'gs://foo/bar',
+        'artifact_location': '/foo/bar',
     }
 
     with uv.start_run(**mlflow_cfg) as active_run, uv.active_reporter(
@@ -98,7 +98,7 @@ def test_report_all():
     mlflow_cfg = {
         'experiment_name': 'foo',
         'run_name': 'bar',
-        'artifact_location': 'gs://foo/bar',
+        'artifact_location': '/foo/bar',
     }
 
     with uv.start_run(**mlflow_cfg) as active_run, uv.active_reporter(
@@ -154,7 +154,7 @@ def test_report():
     mlflow_cfg = {
         'experiment_name': 'foo',
         'run_name': 'bar',
-        'artifact_location': 'gs://foo/bar',
+        'artifact_location': '/foo/bar',
     }
 
     with uv.start_run(**mlflow_cfg) as active_run, uv.active_reporter(
