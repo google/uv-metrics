@@ -15,6 +15,7 @@
 # limitations under the License.
 """Reporter interface and implementations."""
 
+import logging
 import os
 from contextlib import contextmanager
 import google
@@ -119,6 +120,11 @@ def start_run(param_prefix: Optional[str] = None,
   attempts to extract parameters from the environment and log those to the
   bound UV reporter using `report_params`.
 
+  Note that if experiment_name is specified and refers to an existing
+  experiment, then the artifact_location will not be honored as this is an
+  immutable property of an mlflow experiment. This method will issue a warning
+  but proceed.
+
   Note that the returned value can be used as a context manager:
   https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.start_run
   """
@@ -151,5 +157,12 @@ def start_run(param_prefix: Optional[str] = None,
         'cloud_ml_job_details',
         f'https://console.cloud.google.com/ai-platform/jobs/{cloud_ml_job_id}')
     mlf.set_tag('cloud_ml_job_id', cloud_ml_job_id)
+
+  mlf_artifact_uri = mlf.get_artifact_uri()
+  if mlf_artifact_uri is not None and artifact_location is not None:
+    if not mlf_artifact_uri.startswith(artifact_location):
+      logging.warning(
+          f'requested mlflow artifact location {artifact_location} differs '
+          f'from existing experiment artifact uri {mlf_artifact_uri}')
 
   return ret

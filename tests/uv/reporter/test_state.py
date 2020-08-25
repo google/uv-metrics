@@ -94,11 +94,16 @@ def test_global_reporter():
     assert reader3.read("deeper") == [10]
 
 
-def test_start_run(monkeypatch):
+def _reset_experiment():
   # this is needed because the active experiment in mlflow is sticky, so if
   # an earlier test sets this, then things fail here when we don't use
   # an explicit experiment
   mlf.set_experiment(mlf.entities.Experiment.DEFAULT_EXPERIMENT_NAME)
+
+
+def test_start_run(monkeypatch):
+
+  _reset_experiment()
 
   with tempfile.TemporaryDirectory() as tmpdir:
 
@@ -115,9 +120,9 @@ def test_start_run(monkeypatch):
 
     # test explicit experiment name, run name, artifact location
     cfg = {
-        'experiment_name': 'foo',
+        'experiment_name': 'experiment_0',
         'run_name': 'bar',
-        'artifact_location': 'gs://foo/bar',
+        'artifact_location': '/foo/bar',
     }
 
     with uv.start_run(**cfg) as r:
@@ -186,14 +191,14 @@ def test_start_run(monkeypatch):
 
     monkeypatch.delenv('CLOUD_ML_JOB_ID')
 
-    # explicitly test case where no default or explicit gcp project is set
+    # test case where no gcp project is set with gcs artifact store
     def mock_default(scopes=None, request=None, quota_project_id=None):
       return (google.auth.credentials.AnonymousCredentials(), None)
 
     monkeypatch.setattr('google.auth.default', mock_default)
 
     cfg = {
-        'experiment_name': 'foo',
+        'experiment_name': 'experiment_1',
         'run_name': 'bar',
         'artifact_location': 'gs://foo/bar',
     }
@@ -205,5 +210,46 @@ def test_start_run(monkeypatch):
 
       assert r.data.tags['mlflow.runName'] == cfg['run_name']
       assert mlf.get_experiment_by_name(cfg['experiment_name']) is not None
-      assert mlf.get_artifact_uri().startswith(cfg['artifact_location'])
+      assert mlf.get_artifact_uri().startswith(
+          cfg['artifact_location']), mlf.get_artifact_uri()
       assert os.environ.get('GOOGLE_CLOUD_PROJECT') is not None
+
+    # test case where gcp project is set with gcs artifact storage
+    def mock_default(scopes=None, request=None, quota_project_id=None):
+      return (google.auth.credentials.AnonymousCredentials(), 'test_project')
+
+    monkeypatch.setattr('google.auth.default', mock_default)
+
+    cfg = {
+        'experiment_name': 'experiment_2',
+        'run_name': 'bar',
+        'artifact_location': 'gs://foo/bar',
+    }
+
+    with uv.start_run(**cfg) as r:
+      active_run = mlf.active_run()
+      assert active_run is not None
+      assert active_run == r
+
+      assert r.data.tags['mlflow.runName'] == cfg['run_name']
+      assert mlf.get_experiment_by_name(cfg['experiment_name']) is not None
+      assert mlf.get_artifact_uri().startswith(
+          cfg['artifact_location']), mlf.get_artifact_uri()
+
+    # test using existing experiment with different artifact location
+    #   - this should use original artifact location
+    cfg = {
+        'experiment_name': 'experiment_2',
+        'run_name': 'bar2',
+        'artifact_location': '/a/b/c',
+    }
+
+    with uv.start_run(**cfg) as r:
+      active_run = mlf.active_run()
+      assert active_run is not None
+      assert active_run == r
+
+      assert r.data.tags['mlflow.runName'] == cfg['run_name']
+      assert mlf.get_experiment_by_name(cfg['experiment_name']) is not None
+      assert not mlf.get_artifact_uri().startswith(
+          cfg['artifact_location']), mlf.get_artifact_uri()
