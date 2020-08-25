@@ -17,6 +17,7 @@
 
 import os
 from contextlib import contextmanager
+import google.auth
 from typing import Dict, Optional
 
 import mlflow as mlf
@@ -86,6 +87,29 @@ def report_params(m: Dict[str, str]) -> None:
   return get_reporter().report_params(m)
 
 
+def _ensure_non_null_project(artifact_root: Optional[str]):
+  '''Ensures that the google cloud python api methods can get a non-None
+  project id when the mlflow artifact root is a storage bucket. This is necessary
+  because mlflow uses google.cloud.storage.Client() to create a client instance,
+  which requires a project. This project name does not appear to need to be valid for
+  reading and writing artifacts, so we set it to a placeholder string if there is
+  no project available via the standard api methods.
+  '''
+  if artifact_root is None:
+    return
+
+  if not artifact_root.startswith('gs://'):
+    return
+
+  _, project_id = google.auth.default()
+  if project_id is not None:
+    return
+
+  # we only set this as a last resort
+  os.environ['GOOGLE_CLOUD_PROJECT'] = 'placeholder'
+  return
+
+
 def start_run(param_prefix: Optional[str] = None,
               experiment_name: Optional[str] = None,
               run_name: Optional[str] = None,
@@ -106,6 +130,8 @@ def start_run(param_prefix: Optional[str] = None,
 
   if artifact_location is None:
     artifact_location = os.environ.get("MLFLOW_ARTIFACT_ROOT")
+
+  _ensure_non_null_project(artifact_location)
 
   # Make sure the experiment exists before the run starts.
   if experiment_name is not None:

@@ -14,7 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import google.auth
+import google.cloud.storage
 import mlflow as mlf
+import os
 import pprint as pp
 import uv
 import uv.reporter.state as s
@@ -125,11 +128,11 @@ def test_start_run(monkeypatch):
       assert mlf.get_experiment_by_name(cfg['experiment_name']) is not None
       assert mlf.get_artifact_uri().startswith(cfg['artifact_location'])
 
-    # test env var experiment name, run name, artifact location
+    # test env var experiment name, run name, path-based artifact location
     cfg = {
         'MLFLOW_EXPERIMENT_NAME': 'env_foo',
         'MLFLOW_RUN_NAME': 'env_bar',
-        'MLFLOW_ARTIFACT_ROOT': 'gs://env/foo/bar'
+        'MLFLOW_ARTIFACT_ROOT': '/tmp/foo/bar'
     }
 
     for k, v in cfg.items():
@@ -181,3 +184,37 @@ def test_start_run(monkeypatch):
       assert tags['cloud_ml_job_id'] == 'foo_cloud_job'
 
     monkeypatch.delenv('CLOUD_ML_JOB_ID')
+
+    # explicitly test case where no default or explicit gcp project is set
+    creds, proj_id = google.auth.default()
+
+    def mock_default():
+      return creds, None
+
+    orig_default = google.auth.default
+    monkeypatch.setattr(google.auth, 'default', mock_default)
+
+    cfg = {
+        'experiment_name': 'foo',
+        'run_name': 'bar',
+        'artifact_location': 'gs://foo/bar',
+    }
+
+    with uv.start_run(**cfg) as r:
+      active_run = mlf.active_run()
+      assert active_run is not None
+      assert active_run == r
+
+      assert r.data.tags['mlflow.runName'] == cfg['run_name']
+      assert mlf.get_experiment_by_name(cfg['experiment_name']) is not None
+      assert mlf.get_artifact_uri().startswith(cfg['artifact_location'])
+      assert os.environ.get('GOOGLE_CLOUD_PROJECT') is not None
+
+    # restore the true google.auth.default method and test that our fake
+    # project is set, and that it allows us to create a default
+    # storage client, as this is what mlflow will need
+    monkeypatch.setattr(google.auth, 'default', orig_default)
+    creds, proj = google.auth.default()
+    assert creds is not None
+    assert proj is not None
+    gcs_client = google.cloud.storage.Client()
