@@ -186,10 +186,8 @@ def test_start_run(monkeypatch):
     monkeypatch.delenv('CLOUD_ML_JOB_ID')
 
     # explicitly test case where no default or explicit gcp project is set
-    creds, proj_id = google.auth.default()
-
     def mock_default():
-      return creds, None
+      return object(), None
 
     orig_default = google.auth.default
     monkeypatch.setattr(google.auth, 'default', mock_default)
@@ -209,12 +207,3 @@ def test_start_run(monkeypatch):
       assert mlf.get_experiment_by_name(cfg['experiment_name']) is not None
       assert mlf.get_artifact_uri().startswith(cfg['artifact_location'])
       assert os.environ.get('GOOGLE_CLOUD_PROJECT') is not None
-
-    # restore the true google.auth.default method and test that our fake
-    # project is set, and that it allows us to create a default
-    # storage client, as this is what mlflow will need
-    monkeypatch.setattr(google.auth, 'default', orig_default)
-    creds, proj = google.auth.default()
-    assert creds is not None
-    assert proj is not None
-    gcs_client = google.cloud.storage.Client()
