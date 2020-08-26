@@ -1,5 +1,5 @@
 Measurement Manager
-==========
+===================
 
 While reporters in `uv-metrics` handle values that have already been measured,
 the `MeasurementManager` feature allows you to schedule certain measurements to
