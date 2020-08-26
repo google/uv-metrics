@@ -48,8 +48,11 @@ def set_reporter(r: AbstractReporter) -> AbstractReporter:
 def active_reporter(r: AbstractReporter):
   old_reporter = _active_reporter
   globals()['_active_reporter'] = r
-  yield r
-  globals()['_active_reporter'] = old_reporter
+  try:
+    yield r
+  finally:
+    globals()['_active_reporter'].close()
+    globals()['_active_reporter'] = old_reporter
 
 
 def report(step: int, k: t.MetricKey, v: t.Metric) -> None:

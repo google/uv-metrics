@@ -24,10 +24,17 @@ import uv.types as t
 
 
 class MLFlowReporter(b.AbstractReporter):
-  """Reporter implementation that logs metrics to mlflow."""
+  """Reporter implementation that logs metrics to mlflow.
 
-  def __init__(self):
+  Args:
+  count: reporter buffers at most count metrics before flushing
+         to the mlflow backend. (default = None = no buffering)
+  """
+
+  def __init__(self, count: Optional[int] = None):
     self._client = mlf.tracking.MlflowClient()
+    self._count = count or 0
+    self._buffer: List[Metric] = []
 
   def _log_batch(
       self,
@@ -46,6 +53,10 @@ class MLFlowReporter(b.AbstractReporter):
                            params=params,
                            tags=tags)
 
+  def _flush(self):
+    self._log_batch(metrics=self._buffer)
+    self._buffer = []
+
   def report_param(self, k: str, v: str) -> None:
     self.report_params({k: v})
 
@@ -54,7 +65,13 @@ class MLFlowReporter(b.AbstractReporter):
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
     ts = int(time.time() * 1000)
-    self._log_batch(metrics=[Metric(k, v, ts, step) for k, v in m.items()])
+    self._buffer += [Metric(k, v, ts, step) for k, v in m.items()]
+    if len(self._buffer) >= self._count:
+      self._flush()
 
   def report(self, step: int, k: t.MetricKey, v: t.Metric) -> None:
     self.report_all(step=step, m={k: v})
+
+  def close(self) -> None:
+    self._flush()
+    super().close()

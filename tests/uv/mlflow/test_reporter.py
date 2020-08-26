@@ -201,3 +201,75 @@ def test_report():
         cur_step = s['step']
         for k, v in s['m'].items():
           assert metric_data[k][cur_step] == v
+
+
+def test_buffered_report():
+
+  with tempfile.TemporaryDirectory() as tmpdir:
+    mlf.set_tracking_uri(f'file:{tmpdir}/foo')
+    _reset_experiment()
+
+    mlflow_cfg = {
+        'experiment_name': 'foo',
+        'run_name': 'bar',
+        'artifact_location': '/foo/bar',
+    }
+
+    with uv.start_run(**mlflow_cfg) as active_run, uv.active_reporter(
+        MLFlowReporter(count=3)) as r:
+      assert r is not None
+      assert mlf.active_run() == active_run
+
+      # we need to access the run via a client to inspect most data
+      client = mlf.tracking.MlflowClient()
+      run_id = active_run.info.run_id
+
+      def _count_metrics(metrics):
+        count = 0
+        for m in metrics:
+          for k in m:
+            count += len(client.get_metric_history(run_id, k))
+        return count
+
+      run = client.get_run(run_id)
+      assert run is not None
+
+      metrics = run.data.metrics
+
+      steps = []
+      for i in range(4):
+        steps.append({'step': i + 1, 'm': {'a': i, 'b': 2 * i}})
+
+      for p in steps[:1]:
+        for k, v in p['m'].items():
+          r.report(step=p['step'], k=k, v=v)
+
+      # should have no metrics reported yet, should still be buffered
+      assert len(metrics) == 0
+
+      for p in steps[1:]:
+        for k, v in p['m'].items():
+          r.report(step=p['step'], k=k, v=v)
+
+      # should have six metrics now reported
+      metrics = client.get_run(run_id).data.metrics
+      assert _count_metrics(metrics) == 6
+
+    # exit the context manager scope, which will close the reporter
+    # and flush the buffer
+    # should have eight metrics now reported
+    metrics = client.get_run(run_id).data.metrics
+    assert _count_metrics(metrics) == 8
+
+    # now check that the metrics are in the run data
+    metric_data = {}
+    for k, v in steps[0]['m'].items():
+      assert k in metrics
+      metric_data[k] = {
+          x.step: x.value for x in client.get_metric_history(run_id, k)
+      }
+
+    for s in steps:
+      cur_step = s['step']
+      for k, v in s['m'].items():
+        assert metric_data[k][cur_step] == v
