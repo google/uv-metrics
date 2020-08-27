@@ -135,6 +135,12 @@ def main():
   plt.savefig(outfile)
   print(f'plot saved to {outfile}')
 
+  # we can also log this plot as an artifact
+  artifact_run = mean_zero_runs[0]
+  run_id = artifact_run.info.run_id
+  client.log_artifact(run_id=run_id, local_path=outfile)
+  print(f'artifact saved to run {artifact_run.data.tags["mlflow.runName"]}')
+
 
 if __name__ == '__main__':
   main()

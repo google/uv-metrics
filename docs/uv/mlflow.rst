@@ -61,7 +61,7 @@ MLFlow's ui server to browse and plot data. Another important task is to query m
 for your data and then perform analysis on it in your favorite toolchain like
 numpy and matplotlib.
 
-We have a `short tutorial <https://github.com/google/uv-metrics/tree/matser/tutorials/mlflow_queries>`_
+We have a `short tutorial <https://github.com/google/uv-metrics/tree/master/tutorials/mlflow_queries>`_
 that demonstrates the basics of logging, querying, and plotting using the MLFlow query
 api with UV reporting.
 
@@ -75,7 +75,8 @@ your results in the same way.
 
 This tutorial also demonstrates how to use mlflow's query capabilities to
 search your run data and retrieve metric history data for analysis and
-plotting outside of the mlflow ui server.
+plotting outside of the mlflow ui server. We also demonstrate how to use the mlflow
+api to store artifacts associated with runs.
 
 In the ``tutorial.py`` code, in the ``_run_experiments`` method, you can
 see that we perform several runs using different parameters. Here we configure
