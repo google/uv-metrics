@@ -27,14 +27,15 @@ class MLFlowReporter(b.AbstractReporter):
   """Reporter implementation that logs metrics to mlflow.
 
   Args:
-  count: reporter buffers at most count metrics before flushing
+  bufsize: reporter buffers at most count metrics before flushing
          to the mlflow backend. (default = None = no buffering)
   """
 
-  def __init__(self, count: Optional[int] = None):
+  def __init__(self, bufsize: Optional[int] = None):
     self._client = mlf.tracking.MlflowClient()
-    self._count = count or 0
-    self._buffer: List[Metric] = []
+    self._bufsize = bufsize or 0
+    self._buffer: Dict[str, List[Metric]] = {}
+    self._count = 0
 
   def _log_batch(
       self,
@@ -54,8 +55,10 @@ class MLFlowReporter(b.AbstractReporter):
                            tags=tags)
 
   def _flush(self):
-    self._log_batch(metrics=self._buffer)
-    self._buffer = []
+    for run_id, metrics in self._buffer.items():
+      self._log_batch(run_id=run_id, metrics=metrics)
+    self._buffer = {}
+    self._count = 0
 
   def report_param(self, k: str, v: str) -> None:
     self.report_params({k: v})
@@ -65,8 +68,15 @@ class MLFlowReporter(b.AbstractReporter):
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
     ts = int(time.time() * 1000)
-    self._buffer += [Metric(k, v, ts, step) for k, v in m.items()]
-    if len(self._buffer) >= self._count:
+
+    run_id = mlf.active_run().info.run_id
+    if run_id not in self._buffer:
+      self._buffer[run_id] = []
+
+    self._count += len(m)
+    self._buffer[run_id] += [Metric(k, v, ts, step) for k, v in m.items()]
+
+    if self._count >= self._bufsize:
       self._flush()
 
   def report(self, step: int, k: t.MetricKey, v: t.Metric) -> None:
