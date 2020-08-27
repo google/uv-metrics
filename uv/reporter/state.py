@@ -15,8 +15,10 @@
 # limitations under the License.
 """Reporter interface and implementations."""
 
+import logging
 import os
 from contextlib import contextmanager
+import google.auth
 from typing import Dict, Optional
 
 import mlflow as mlf
@@ -86,6 +88,29 @@ def report_params(m: Dict[str, str]) -> None:
   return get_reporter().report_params(m)
 
 
+def _ensure_non_null_project(artifact_root: Optional[str]):
+  '''Ensures that the google cloud python api methods can get a non-None
+  project id when the mlflow artifact root is a storage bucket. This is necessary
+  because mlflow uses google.cloud.storage.Client() to create a client instance,
+  which requires a project. This project name does not appear to need to be valid for
+  reading and writing artifacts, so we set it to a placeholder string if there is
+  no project available via the standard api methods.
+  '''
+  if artifact_root is None:
+    return
+
+  if not artifact_root.startswith('gs://'):
+    return
+
+  _, project_id = google.auth.default()
+  if project_id is not None:
+    return
+
+  # we only set this as a last resort
+  os.environ['GOOGLE_CLOUD_PROJECT'] = 'placeholder'
+  return
+
+
 def start_run(param_prefix: Optional[str] = None,
               experiment_name: Optional[str] = None,
               run_name: Optional[str] = None,
@@ -94,6 +119,11 @@ def start_run(param_prefix: Optional[str] = None,
   """Close alias of mlflow.start_run. The only difference is that uv.start_run
   attempts to extract parameters from the environment and log those to the
   bound UV reporter using `report_params`.
+
+  Note that if experiment_name is specified and refers to an existing
+  experiment, then the artifact_location will not be honored as this is an
+  immutable property of an mlflow experiment. This method will issue a warning
+  but proceed.
 
   Note that the returned value can be used as a context manager:
   https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.start_run
@@ -106,6 +136,8 @@ def start_run(param_prefix: Optional[str] = None,
 
   if artifact_location is None:
     artifact_location = os.environ.get("MLFLOW_ARTIFACT_ROOT")
+
+  _ensure_non_null_project(artifact_location)
 
   # Make sure the experiment exists before the run starts.
   if experiment_name is not None:
@@ -125,5 +157,12 @@ def start_run(param_prefix: Optional[str] = None,
         'cloud_ml_job_details',
         f'https://console.cloud.google.com/ai-platform/jobs/{cloud_ml_job_id}')
     mlf.set_tag('cloud_ml_job_id', cloud_ml_job_id)
+
+  mlf_artifact_uri = mlf.get_artifact_uri()
+  if mlf_artifact_uri is not None and artifact_location is not None:
+    if not mlf_artifact_uri.startswith(artifact_location):
+      logging.warning(
+          f'requested mlflow artifact location {artifact_location} differs '
+          f'from existing experiment artifact uri {mlf_artifact_uri}')
 
   return ret
