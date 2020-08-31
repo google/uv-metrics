@@ -80,7 +80,7 @@ def main(args):
       d = json.loads(msg.data.decode('utf-8'))
       logging.info(f'{d}')
       run_id = d['run_id']
-      metrics = [Metric(*x) for x in d['metrics']]
+      metrics = [Metric(**x) for x in d['metrics']]
       client.log_batch(run_id=run_id, metrics=metrics)
 
   subscriber = pubsub_v1.SubscriberClient()
