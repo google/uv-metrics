@@ -68,7 +68,7 @@ class MLFlowReporter(b.AbstractReporter):
           json.dumps({
               'run_id': run_id,
               'metrics': [_metric_to_dict(m) for m in metrics]
-          }),
+          }).encode('utf-8'),
       )
       metrics = []
 
