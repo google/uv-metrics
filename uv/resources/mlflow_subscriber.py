@@ -24,9 +24,7 @@ import json
 import logging
 import mlflow as mlf
 from mlflow.entities import Metric
-import os
 import sys
-import time
 
 logging.basicConfig(level=logging.INFO)
 
@@ -76,12 +74,13 @@ def main(args):
   def _callback(msg: str):
     if args.verbose:
       logging.info(f'received msg: {msg}')
-      msg.ack()
-      d = json.loads(msg.data.decode('utf-8'))
+    msg.ack()
+    d = json.loads(msg.data.decode('utf-8'))
+    if args.verbose:
       logging.info(f'{d}')
-      run_id = d['run_id']
-      metrics = [Metric(**x) for x in d['metrics']]
-      client.log_batch(run_id=run_id, metrics=metrics)
+    run_id = d['run_id']
+    metrics = [Metric(**x) for x in d['metrics']]
+    client.log_batch(run_id=run_id, metrics=metrics)
 
   subscriber = pubsub_v1.SubscriberClient()
   sub_path = subscriber.subscription_path(project, subscription)
