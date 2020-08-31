@@ -45,6 +45,7 @@ REQUIRED_PACKAGES = [
     "numpy>=1.18.0",
     "sqlalchemy",
     "tqdm>=4.42.1",
+    "google-cloud-pubsub>=1.7.0",
 ]
 
 setup(

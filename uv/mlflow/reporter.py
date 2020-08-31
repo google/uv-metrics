@@ -15,7 +15,7 @@
 # limitations under the License.
 """MLFlow reporter that conforms to UV's reporter interface."""
 
-from google.cloud import pubsub_v1
+import google.cloud.pubsub_v1
 import json
 import mlflow as mlf
 from mlflow.entities import Param, Metric, RunTag
@@ -44,10 +44,10 @@ class MLFlowReporter(b.AbstractReporter):
   def __init__(self, pubsub_topic: str = None):
     self._client = mlf.tracking.MlflowClient()
     self._topic = pubsub_topic
-    self._publisher: Optional[pubsub_v1.PublisherClient] = None
+    self._publisher: Optional[google.cloud.pubsub_v1.PublisherClient] = None
 
     if pubsub_topic is not None:
-      self._publisher = pubsub_v1.PublisherClient()
+      self._publisher = google.cloud.pubsub_v1.PublisherClient()
 
   def _log_batch(
       self,
