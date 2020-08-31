@@ -15,6 +15,7 @@
 # limitations under the License.
 """MLFlow reporter that conforms to UV's reporter interface."""
 
+from google.cloud import pubsub_v1
 import mlflow as mlf
 from mlflow.entities import Param, Metric, RunTag
 import time
@@ -23,11 +24,29 @@ import uv.reporter.base as b
 import uv.types as t
 
 
-class MLFlowReporter(b.AbstractReporter):
-  """Reporter implementation that logs metrics to mlflow."""
+def _metric_to_dict(m: Metric) -> Dict[str, Any]:
+  return {
+      'key': m.key,
+      'value': m.value,
+      'timestamp': m.timestamp,
+      'step': m.step,
+  }
 
-  def __init__(self):
+
+class MLFlowReporter(b.AbstractReporter):
+  """Reporter implementation that logs metrics to mlflow.
+  Args:
+  pubsub_topic: if specified, metrics are published to this google
+                cloud pubsub topic instead of directly to mlflow
+  """
+
+  def __init__(self, pubsub_topic: str = None):
     self._client = mlf.tracking.MlflowClient()
+    self._topic = pubsub_topic
+    self._publisher: Optional[pubsub_v1.PublisherClient] = None
+
+    if pubsub_topic is not None:
+      self._publisher = pubsub_v1.PublisherClient()
 
   def _log_batch(
       self,
@@ -41,10 +60,22 @@ class MLFlowReporter(b.AbstractReporter):
     params = params or []
     tags = tags or []
 
-    self._client.log_batch(run_id=run_id,
-                           metrics=metrics,
-                           params=params,
-                           tags=tags)
+    # we are using pubsub for metrics
+    if self._publisher is not None and len(metrics):
+      self._publisher.publish(
+          self._topic,
+          json.dumps({
+              'run_id': run_id,
+              'metrics': [_metric_to_dict(m) for m in metrics]
+          }),
+      )
+      metrics = []
+
+    if len(params) or len(tags) or len(metrics):
+      self._client.log_batch(run_id=run_id,
+                             metrics=metrics,
+                             params=params,
+                             tags=tags)
 
   def report_param(self, k: str, v: str) -> None:
     self.report_params({k: v})
