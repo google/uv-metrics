@@ -17,6 +17,10 @@
 which may be measured at varying times through training."""
 
 from typing import Dict, Iterable, List, Any, Union, Callable, Optional
+import uv.types as t
+
+TriggerFunction = Callable[[int], bool]
+MeasurementFunction = Callable[[Dict[str, Any]], t.Metric]
 
 
 class MetricCallback:
@@ -46,8 +50,10 @@ class MetricCallback:
     self.static_state = static_state
     self.measurements = {}
 
-  def add_measurement(self, measurement_spec: Dict[str, Union[str, int,
-                                                              Callable]]):
+  def add_measurement(self,
+                      measurement_spec: Dict[str,
+                                             Union[str, MeasurementFunction,
+                                                   TriggerFunction]]):
     """Adds a measurement specification to the MetricCallback.
     Args:
       measurement_spec: Dict containing keys:
