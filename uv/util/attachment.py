@@ -21,7 +21,7 @@ method.
 """
 
 from collections import ChainMap
-from typing import Dict, Iterable
+from typing import Dict, Iterable, Union
 
 import uv.types as t
 import uv.util as u
@@ -83,3 +83,25 @@ def by_suffix(
 
   """
   return _by_attachment(ms, prefix=False)
+
+
+def flatten(
+    ms: Dict[t.MetricKey, Union[t.Metric, Dict[t.MetricKey, t.Metric]]]
+) -> Dict[t.MetricKey, t.Metric]:
+  """Collapse the prefixes into the key. Leaves non-Dict values untouched.
+
+  Note: this is not a recursive flatten. Values must either be Metrics or
+  mappings from MetricKey to Metric
+  """
+
+  # metric_values are already flat
+  metric_values = {k: v for k, v in ms.items() if not isinstance(v, dict)}
+
+  # dict_values needs flattening
+  dict_values = {k: v for k, v in ms.items() if isinstance(v, dict)}
+  flattened = _by_attachment(dict_values, prefix=True)
+
+  if len(set(flattened.keys()).intersection(set(metric_values.keys()))) != 0:
+    raise ValueError('Flattening dictionary would result in collision')
+
+  return {**flattened, **metric_values}
