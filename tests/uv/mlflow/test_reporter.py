@@ -25,6 +25,27 @@ import uv
 from uv.mlflow.reporter import MLFlowReporter, MLFlowPubsubReporter
 
 
+@pytest.fixture
+def mock_pubsub(monkeypatch):
+
+  class MockClient():
+
+    def __init__(self, batch_settings=(), publisher_options=(), **kwargs):
+      pass
+
+    def publish(self, topic: str, msg: bytes):
+      d = json.loads(msg.decode('utf-8'))
+      run_id = d['run_id']
+      metrics = [Metric(**x) for x in d['metrics']]
+      mlf.tracking.MlflowClient().log_batch(run_id=run_id, metrics=metrics)
+
+    @staticmethod
+    def topic_path(project: str, topic: str) -> str:
+      return f'projects/{project}/topics/{topic}'
+
+  monkeypatch.setattr(google.cloud.pubsub_v1, 'PublisherClient', MockClient)
+
+
 def _reset_experiment():
   # this is needed because the active experiment in mlflow is sticky, so if
   # an earlier test sets this, then things fail here when we don't use
@@ -34,7 +55,7 @@ def _reset_experiment():
 
 @pytest.mark.parametrize(
     'reporter', [MLFlowReporter, lambda: MLFlowPubsubReporter('p', 't')])
-def test_report_params(reporter):
+def test_report_params(mock_pubsub, reporter):
   with tempfile.TemporaryDirectory() as tmpdir:
     mlf.set_tracking_uri(f'file:{tmpdir}/foo')
     _reset_experiment()
@@ -67,7 +88,7 @@ def test_report_params(reporter):
 
 @pytest.mark.parametrize(
     'reporter', [MLFlowReporter, lambda: MLFlowPubsubReporter('p', 't')])
-def test_report_param(reporter):
+def test_report_param(mock_pubsub, reporter):
   with tempfile.TemporaryDirectory() as tmpdir:
     mlf.set_tracking_uri(f'file:{tmpdir}/foo')
     _reset_experiment()
@@ -96,27 +117,6 @@ def test_report_param(reporter):
         p = run.data.params
         assert k in p
         assert p[k] == str(v)
-
-
-@pytest.fixture
-def mock_pubsub(monkeypatch):
-
-  class MockClient():
-
-    def __init__(self, batch_settings=(), publisher_options=(), **kwargs):
-      pass
-
-    def publish(self, topic: str, msg: bytes):
-      d = json.loads(msg.decode('utf-8'))
-      run_id = d['run_id']
-      metrics = [Metric(**x) for x in d['metrics']]
-      mlf.tracking.MlflowClient().log_batch(run_id=run_id, metrics=metrics)
-
-    @staticmethod
-    def topic_path(project: str, topic: str) -> str:
-      return f'projects/{project}/topics/{topic}'
-
-  monkeypatch.setattr(google.cloud.pubsub_v1, 'PublisherClient', MockClient)
 
 
 @pytest.mark.parametrize(
