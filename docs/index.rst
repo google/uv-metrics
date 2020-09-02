@@ -49,7 +49,7 @@ release.
    :maxdepth: 2
    :caption: Contents:
 
-   uv/manager
+   uv/metriccallback
    uv/mlflow
 
 Indices and tables
