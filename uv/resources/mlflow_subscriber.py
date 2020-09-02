@@ -20,16 +20,20 @@ to a backend server.
 import argparse
 from concurrent.futures import TimeoutError
 from google.cloud import pubsub_v1
+from google.cloud.pubsub_v1.subscriber.message import Message
 import json
 import logging
 import mlflow as mlf
 from mlflow.entities import Metric
+import os
 import sys
+import time
+import traceback
 
 logging.basicConfig(level=logging.INFO)
 
 
-def _parser():
+def _parser():  # pragma: no cover
   parser = argparse.ArgumentParser(
       description='Subscriber for mlflow metric reporting.',
       prog='mlflow_subscriber',
@@ -60,31 +64,40 @@ def _parser():
   return parser
 
 
-def _parse_flags(argv):
+def _parse_flags(argv):  # pragma: no cover
   return _parser().parse_args(argv[1:])
 
 
-def main(args):
+def log_metrics(client: mlf.tracking.MlflowClient,
+                msg: Message,
+                verbose: bool = False):
+  '''log received pubsub metrics message to mlflow backend'''
+  try:
+    if verbose:
+      logging.info(f'received msg: {msg}')
+    msg.ack()
+    d = json.loads(msg.data.decode('utf-8'))
+    if verbose:
+      logging.info(f'{d}')
+    run_id = d['run_id']
+    metrics = [Metric(**x) for x in d['metrics']]
+    client.log_batch(run_id=run_id, metrics=metrics)
+  except Exception as e:
+    logging.error(f'exception: {e}')
+    logging.error(f'{traceback.format_exc()}')
+
+
+def main():  # pragma: no cover
+  args = _parse_flags(sys.argv)
   project = args.project
   subscription = args.subscription
   mlflow_uri = args.mlflow_uri
 
   client = mlf.tracking.MlflowClient(tracking_uri=mlflow_uri)
-
-  def _callback(msg: str):
-    if args.verbose:
-      logging.info(f'received msg: {msg}')
-    msg.ack()
-    d = json.loads(msg.data.decode('utf-8'))
-    if args.verbose:
-      logging.info(f'{d}')
-    run_id = d['run_id']
-    metrics = [Metric(**x) for x in d['metrics']]
-    client.log_batch(run_id=run_id, metrics=metrics)
-
   subscriber = pubsub_v1.SubscriberClient()
   sub_path = subscriber.subscription_path(project, subscription)
-  future = subscriber.subscribe(sub_path, callback=_callback)
+  future = subscriber.subscribe(
+      sub_path, callback=lambda msg: log_metrics(client, msg, args.verbose))
 
   with subscriber:
     try:
@@ -93,5 +106,5 @@ def main(args):
       future.cancel()
 
 
-if __name__ == '__main__':
-  main(_parse_flags(sys.argv))
+if __name__ == '__main__':  # pragma: no cover
+  main()

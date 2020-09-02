@@ -25,29 +25,11 @@ import uv.reporter.base as b
 import uv.types as t
 
 
-def _metric_to_dict(m: Metric) -> Dict[str, Any]:
-  return {
-      'key': m.key,
-      'value': m.value,
-      'timestamp': m.timestamp,
-      'step': m.step,
-  }
-
-
 class MLFlowReporter(b.AbstractReporter):
-  """Reporter implementation that logs metrics to mlflow.
-  Args:
-  pubsub_topic: if specified, metrics are published to this google
-                cloud pubsub topic instead of directly to mlflow
-  """
+  """Reporter implementation that logs metrics to mlflow."""
 
-  def __init__(self, pubsub_topic: str = None):
+  def __init__(self):
     self._client = mlf.tracking.MlflowClient()
-    self._topic = pubsub_topic
-    self._publisher: Optional[google.cloud.pubsub_v1.PublisherClient] = None
-
-    if pubsub_topic is not None:
-      self._publisher = google.cloud.pubsub_v1.PublisherClient()
 
   def _log_batch(
       self,
@@ -61,22 +43,10 @@ class MLFlowReporter(b.AbstractReporter):
     params = params or []
     tags = tags or []
 
-    # we are using pubsub for metrics
-    if self._publisher is not None and len(metrics):
-      self._publisher.publish(
-          self._topic,
-          json.dumps({
-              'run_id': run_id,
-              'metrics': [_metric_to_dict(m) for m in metrics]
-          }).encode('utf-8'),
-      )
-      metrics = []
-
-    if len(params) or len(tags) or len(metrics):
-      self._client.log_batch(run_id=run_id,
-                             metrics=metrics,
-                             params=params,
-                             tags=tags)
+    self._client.log_batch(run_id=run_id,
+                           metrics=metrics,
+                           params=params,
+                           tags=tags)
 
   def report_param(self, k: str, v: str) -> None:
     self.report_params({k: v})
@@ -87,6 +57,56 @@ class MLFlowReporter(b.AbstractReporter):
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
     ts = int(time.time() * 1000)
     self._log_batch(metrics=[Metric(k, v, ts, step) for k, v in m.items()])
+
+  def report(self, step: int, k: t.MetricKey, v: t.Metric) -> None:
+    self.report_all(step=step, m={k: v})
+
+
+def _metric_dict(
+    key: str,
+    value: float,
+    timestamp: float,
+    step: int,
+) -> Dict[str, Any]:
+  '''create a dictionary describing an mlflow metric'''
+  return {
+      'key': key,
+      'value': value,
+      'timestamp': timestamp,
+      'step': step,
+  }
+
+
+class MLFlowPubsubReporter(b.AbstractReporter):
+  """Reporter implementation that logs metrics to mlflow using
+  gcp pubsub.
+
+  Args:
+
+  project: gcp project for pubsub
+  topic: pubsub topic for publishing metrics
+  """
+
+  def __init__(self, project: str, topic: str):
+    self._base_reporter = MLFlowReporter()
+    self._publisher = google.cloud.pubsub_v1.PublisherClient()
+    self._topic = self._publisher.topic_path(project, topic)
+
+  def report_param(self, k: str, v: str) -> None:
+    self._base_reporter.report_param(k, v)
+
+  def report_params(self, m: Dict[str, str]) -> None:
+    self._base_reporter.report_params(m)
+
+  def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
+    ts = int(time.time() * 1000)
+    self._publisher.publish(
+        self._topic,
+        json.dumps({
+            'run_id': mlf.active_run().info.run_id,
+            'metrics': [_metric_dict(k, v, ts, step) for k, v in m.items()]
+        }).encode('utf-8'),
+    )
 
   def report(self, step: int, k: t.MetricKey, v: t.Metric) -> None:
     self.report_all(step=step, m={k: v})
