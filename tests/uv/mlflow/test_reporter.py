@@ -14,11 +14,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import google.cloud.pubsub_v1
+import json
 import mlflow as mlf
+from mlflow.entities import Metric
+import pytest
 import tempfile
 
 import uv
-from uv.mlflow.reporter import MLFlowReporter
+from uv.mlflow.reporter import MLFlowReporter, MLFlowPubsubReporter
+
+
+@pytest.fixture
+def mock_pubsub(monkeypatch):
+
+  class MockClient():
+
+    def __init__(self, batch_settings=(), publisher_options=(), **kwargs):
+      pass
+
+    def publish(self, topic: str, msg: bytes):
+      d = json.loads(msg.decode('utf-8'))
+      run_id = d['run_id']
+      metrics = [Metric(**x) for x in d['metrics']]
+      mlf.tracking.MlflowClient().log_batch(run_id=run_id, metrics=metrics)
+
+    @staticmethod
+    def topic_path(project: str, topic: str) -> str:
+      return f'projects/{project}/topics/{topic}'
+
+  monkeypatch.setattr(google.cloud.pubsub_v1, 'PublisherClient', MockClient)
 
 
 def _reset_experiment():
@@ -28,7 +53,9 @@ def _reset_experiment():
   mlf.set_experiment(mlf.entities.Experiment.DEFAULT_EXPERIMENT_NAME)
 
 
-def test_report_params():
+@pytest.mark.parametrize(
+    'reporter', [MLFlowReporter, lambda: MLFlowPubsubReporter('p', 't')])
+def test_report_params(mock_pubsub, reporter):
   with tempfile.TemporaryDirectory() as tmpdir:
     mlf.set_tracking_uri(f'file:{tmpdir}/foo')
     _reset_experiment()
@@ -40,7 +67,7 @@ def test_report_params():
     }
 
     with uv.start_run(**mlflow_cfg) as active_run, uv.active_reporter(
-        MLFlowReporter()) as r:
+        reporter()) as r:
       assert r is not None
 
       params = {'a': 3, 'b': 'string_param'}
@@ -59,7 +86,9 @@ def test_report_params():
         assert p[k] == str(v)
 
 
-def test_report_param():
+@pytest.mark.parametrize(
+    'reporter', [MLFlowReporter, lambda: MLFlowPubsubReporter('p', 't')])
+def test_report_param(mock_pubsub, reporter):
   with tempfile.TemporaryDirectory() as tmpdir:
     mlf.set_tracking_uri(f'file:{tmpdir}/foo')
     _reset_experiment()
@@ -71,7 +100,7 @@ def test_report_param():
     }
 
     with uv.start_run(**mlflow_cfg) as active_run, uv.active_reporter(
-        MLFlowReporter()) as r:
+        reporter()) as r:
       assert r is not None
 
       param = {'a': 3.14159}
@@ -90,7 +119,9 @@ def test_report_param():
         assert p[k] == str(v)
 
 
-def test_report_all():
+@pytest.mark.parametrize(
+    'reporter', [MLFlowReporter, lambda: MLFlowPubsubReporter('p', 't')])
+def test_report_all(mock_pubsub, reporter):
   with tempfile.TemporaryDirectory() as tmpdir:
     mlf.set_tracking_uri(f'file:{tmpdir}/foo')
     _reset_experiment()
@@ -102,7 +133,7 @@ def test_report_all():
     }
 
     with uv.start_run(**mlflow_cfg) as active_run, uv.active_reporter(
-        MLFlowReporter()) as r:
+        reporter()) as r:
       assert r is not None
 
       steps = [{
@@ -146,7 +177,9 @@ def test_report_all():
           assert metric_data[k][cur_step] == v
 
 
-def test_report():
+@pytest.mark.parametrize(
+    'reporter', [MLFlowReporter, lambda: MLFlowPubsubReporter('p', 't')])
+def test_report(mock_pubsub, reporter):
   with tempfile.TemporaryDirectory() as tmpdir:
     mlf.set_tracking_uri(f'file:{tmpdir}/foo')
     _reset_experiment()
@@ -158,7 +191,7 @@ def test_report():
     }
 
     with uv.start_run(**mlflow_cfg) as active_run, uv.active_reporter(
-        MLFlowReporter()) as r:
+        reporter()) as r:
       assert r is not None
 
       steps = [{
