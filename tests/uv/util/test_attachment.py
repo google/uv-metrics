@@ -15,6 +15,7 @@
 # limitations under the License.
 """Tests for the prefix utilities."""
 
+import pytest
 import hypothesis.strategies as st
 from hypothesis import given
 
@@ -39,3 +40,51 @@ def test_by_suffix(m):
     assert wrapped.get(a.attach_s(k, "test", prefix=False)) == vs
     assert wrapped.get(a.attach_s(k, "train", prefix=False)) == vs
     assert wrapped.get(a.attach_s(k, "random", prefix=False)) is None
+
+
+@given(st.dictionaries(st.text(min_size=1), st.integers()))
+def test_flatten_flat(m):
+  # Tests that flattening does not affect dictionaries which are already flat
+  flattened = a.flatten(m)
+
+  assert flattened == m
+
+
+@given(
+    st.dictionaries(st.text(min_size=1),
+                    st.dictionaries(st.text(min_size=1), st.integers())))
+def test_flatten_idempotence(m):
+  # Tests that flattening a dictionary twice does the same thing as
+  # flattening it once, i.e. the flattening operation is idempotent
+  assert a.flatten(m) == a.flatten(a.flatten(m))
+
+
+@given(
+    st.dictionaries(st.text(min_size=1),
+                    st.dictionaries(st.text(min_size=1), st.integers())))
+def test_flatten_notflat(m):
+  # Tests that flattening properly handles dictionaries which are not flat
+  flattened = a.flatten(m)
+
+  for k, vs in m.items():
+    for v_k, v_vs in vs.items():
+      assert flattened[k + '.' + v_k] == v_vs
+
+
+@given(
+    st.dictionaries(st.text(min_size=1),
+                    st.dictionaries(st.text(min_size=1),
+                                    st.integers(),
+                                    min_size=1),
+                    min_size=1))
+def test_flatten_error(m):
+  # Tests that flattening returns an error when it is given dictionaries
+  # which would have a key collision after flattening
+
+  k = list(m.keys())[0]
+  k_1 = list(m[k].keys())[0]
+  collision_key = k + '.' + k_1
+  m.update({collision_key: "ANYTHING"})
+
+  with pytest.raises(ValueError):
+    flattened = a.flatten(m)
