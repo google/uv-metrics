@@ -21,7 +21,7 @@ import time
 from typing import Optional, Dict, List, Union
 import uv.reporter.base as b
 import uv.types as t
-from uv.util import attachment
+import uv.util.attachment as ua
 
 
 class MLFlowReporter(b.AbstractReporter):
@@ -51,7 +51,7 @@ class MLFlowReporter(b.AbstractReporter):
     self.report_params({k: v})
 
   def report_params(self, m: Dict[str, Union[str, Dict]]) -> None:
-    m = attachment.flatten(m)
+    m = ua.flatten(m)
     self._log_batch(params=[Param(k, str(v)) for k, v in m.items()])
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:

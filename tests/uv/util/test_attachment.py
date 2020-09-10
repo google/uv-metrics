@@ -53,6 +53,15 @@ def test_flatten_flat(m):
 @given(
     st.dictionaries(st.text(min_size=1),
                     st.dictionaries(st.text(min_size=1), st.integers())))
+def test_flatten_idempotence(m):
+  # Tests that flattening a dictionary twice does the same thing as
+  # flattening it once, i.e. the flattening operation is idempotent
+  assert a.flatten(m) == a.flatten(a.flatten(m))
+
+
+@given(
+    st.dictionaries(st.text(min_size=1),
+                    st.dictionaries(st.text(min_size=1), st.integers())))
 def test_flatten_notflat(m):
   # Tests that flattening properly handles dictionaries which are not flat
   flattened = a.flatten(m)
