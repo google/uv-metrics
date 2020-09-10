@@ -15,10 +15,12 @@
 # limitations under the License.
 """MLFlow reporter that conforms to UV's reporter interface."""
 
+import google.cloud.pubsub_v1
+import json
 import mlflow as mlf
 from mlflow.entities import Param, Metric, RunTag
 import time
-from typing import Optional, Dict, List, Union
+from typing import Optional, Dict, List, Union, Any
 import uv.reporter.base as b
 import uv.types as t
 import uv.util.attachment as ua
@@ -57,6 +59,56 @@ class MLFlowReporter(b.AbstractReporter):
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
     ts = int(time.time() * 1000)
     self._log_batch(metrics=[Metric(k, v, ts, step) for k, v in m.items()])
+
+  def report(self, step: int, k: t.MetricKey, v: t.Metric) -> None:
+    self.report_all(step=step, m={k: v})
+
+
+def _metric_dict(
+    key: str,
+    value: float,
+    timestamp: float,
+    step: int,
+) -> Dict[str, Any]:
+  '''create a dictionary describing an mlflow metric'''
+  return {
+      'key': key,
+      'value': value,
+      'timestamp': timestamp,
+      'step': step,
+  }
+
+
+class MLFlowPubsubReporter(b.AbstractReporter):
+  """Reporter implementation that logs metrics to mlflow using
+  gcp pubsub.
+
+  Args:
+
+  project: gcp project for pubsub
+  topic: pubsub topic for publishing metrics
+  """
+
+  def __init__(self, project: str, topic: str):
+    self._base_reporter = MLFlowReporter()
+    self._publisher = google.cloud.pubsub_v1.PublisherClient()
+    self._topic = self._publisher.topic_path(project, topic)
+
+  def report_param(self, k: str, v: str) -> None:
+    self._base_reporter.report_param(k, v)
+
+  def report_params(self, m: Dict[str, str]) -> None:
+    self._base_reporter.report_params(m)
+
+  def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
+    ts = int(time.time() * 1000)
+    self._publisher.publish(
+        self._topic,
+        json.dumps({
+            'run_id': mlf.active_run().info.run_id,
+            'metrics': [_metric_dict(k, v, ts, step) for k, v in m.items()]
+        }).encode('utf-8'),
+    )
 
   def report(self, step: int, k: t.MetricKey, v: t.Metric) -> None:
     self.report_all(step=step, m={k: v})

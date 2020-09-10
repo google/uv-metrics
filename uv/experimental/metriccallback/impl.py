@@ -13,60 +13,61 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The MeasurementManager class, which conducts and reports on measurements
-which may be measured at varying intervals through training."""
+"""The MetricCallback class, which conducts measurements
+which may be measured at varying times through training."""
 
 from typing import Dict, Iterable, List, Any, Union, Callable, Optional
-from uv.reporter import AbstractReporter
+import uv.types as t
+
+TriggerFunction = Callable[[int], bool]
+MeasurementFunction = Callable[[Dict[str, Any]], t.Metric]
 
 
-class MeasurementManager:
-  """Class for a MeasurementManager.  This manager is instantiated with a
-  particular reporter, which it will use to report whatever measurements is
-  conducts.
+class MetricCallback:
+  """Class for a MetricCallback
 
-  The MeasurementManager has a set of measurements---stored in a dictionary
-  (described below)---which are to be carried out at a certain frequency, which
-  is specific to each measurement.
+  The MetricCallback has a set of measurement specifications---stored in a
+  dictionary (described below)---which are to be carried out at specified
+  training steps, which is specific to each measurement.
 
-  Whenever the MeasurementManager's process() function is called, with a
-  step number provided as an argument, the MeasurementManager decides which
-  measurements are required at each step, carries them out, and reports them.
+  Whenever the MetricCallback's measure() function is called, with a
+  step number provided as an argument, the MetricCallback decides which
+  measurements are required at each step, carries them out, and returns a
+  dictionary of the results.
 
-  In order to carry out the measurement, the Manager has a state (Dict) at each
-  step, which contains all the information necessary to perform the measurement.
-  Part of this state is static (e.g., the training dataset), while part can
-  change at each step.  This dynamic state is passed along in the process() call.
+  In order to carry out the measurement, the MetricCallback has a state (Dict)
+  at each step, which contains all the information necessary to perform the
+  measurement. Part of this state is static (e.g., the training dataset), while
+  part can change at each step.  This dynamic state is passed along in
+  the measure() call.
 
   Args:
     static_state: Dict of variables which will be used to compute the measured
                   values.  The static_state is fixed throughout time.
-    reporter: Reporter which will report the measurements.
   """
 
-  def __init__(self, static_state: Dict[str, Any], reporter: AbstractReporter):
+  def __init__(self, static_state: Dict[str, Any]):
     self.static_state = static_state
-    self.reporter = reporter
     self.measurements = {}
 
-  def add_measurement(self, measurement_spec: Dict[str, Union[str, int,
-                                                              Callable]]):
-    """Adds a measurement specification to the MeasurementManager.
+  def add_measurement(self,
+                      measurement_spec: Dict[str,
+                                             Union[str, MeasurementFunction,
+                                                   TriggerFunction]]):
+    """Adds a measurement specification to the MetricCallback.
     Args:
       measurement_spec: Dict containing keys:
         'name': String, the name of the measurement, e.g. 'training_loss'
-        'interval': Integer, how often to measure
+        'trigger': Function, which takes in the step number and
+                             outputs True if the measurement should be
+                             performed at this step.
         'function': Function, taking in the state_dictionary, and returning the
                               measured value
     """
     name = measurement_spec['name']
 
-    if measurement_spec['interval'] <= 0:
-      raise ValueError(
-          'measurement_spec[\'interval\'] must be greater than zero')
-
     self.measurements[name] = {
-        'interval': measurement_spec['interval'],
+        'trigger': measurement_spec['trigger'],
         'function': measurement_spec['function']
     }
 
@@ -101,12 +102,14 @@ class MeasurementManager:
       measurements[name] = measured_value
 
     if len(measurements) > 0:
-      self.reporter.report_all(step, measurements)
+      return measurements
+    else:
+      return None
 
   def triggered(self, step: int) -> Iterable[str]:
     """ Returns an iterable of measurement names which are to be
     performed a the given step """
 
     for name, spec in self.measurements.items():
-      if step % spec['interval'] == 0:
+      if spec['trigger'](step):
         yield name
