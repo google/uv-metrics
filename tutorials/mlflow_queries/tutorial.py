@@ -67,7 +67,7 @@ def _compute(mean: float, std: float):
   '''performs a single compute run, logging metrics to mlflow'''
   fn = lambda x: _gaussian(x, mean, std)
 
-  for i in range(64):
+  for i in range(2):  #64):
     x = (i / 32.0) - 1
     metrics = {'x': x, 'y': fn(x)}
     uv.report_all(step=i, m=metrics)
@@ -140,6 +140,16 @@ def main():
   run_id = artifact_run.info.run_id
   client.log_artifact(run_id=run_id, local_path=outfile)
   print(f'artifact saved to run {artifact_run.data.tags["mlflow.runName"]}')
+
+  # you can list a job's artifacts using list_artifacts()
+  print(f'artifacts for run_id {run_id}:')
+  artifacts = client.list_artifacts(run_id=run_id)
+  for a in artifacts:
+    print(f'{a}')
+
+  # to retrieve an artifact, use client.download_artifacts()
+  download_path = '.'
+  client.download_artifacts(run_id=run_id, path=artifacts[0].path, dst_path='.')
 
 
 if __name__ == '__main__':
