@@ -20,9 +20,10 @@ import json
 import mlflow as mlf
 from mlflow.entities import Param, Metric, RunTag
 import time
-from typing import Optional, Dict, List, Any
+from typing import Optional, Dict, List, Union, Any
 import uv.reporter.base as b
 import uv.types as t
+import uv.util.attachment as ua
 
 
 class MLFlowReporter(b.AbstractReporter):
@@ -51,7 +52,8 @@ class MLFlowReporter(b.AbstractReporter):
   def report_param(self, k: str, v: str) -> None:
     self.report_params({k: v})
 
-  def report_params(self, m: Dict[str, str]) -> None:
+  def report_params(self, m: Dict[str, Union[str, Dict]]) -> None:
+    m = ua.flatten(m)
     self._log_batch(params=[Param(k, str(v)) for k, v in m.items()])
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
