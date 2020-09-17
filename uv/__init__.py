@@ -16,7 +16,7 @@
 from uv.reporter.base import AbstractReporter
 from uv.reporter.state import (active_reporter, get_reporter, report,
                                report_all, report_param, report_params,
-                               set_reporter, start_run)
+                               report_artifact, set_reporter, start_run)
 from uv.reporter.store import LoggingReporter, MemoryReporter
 
 from ._version import get_versions
@@ -32,6 +32,7 @@ __all__ = [
     "report_all",
     "report_param",
     "report_params",
+    "report_artifact",
     "start_run",
     "AbstractReporter",
     "LoggingReporter",
