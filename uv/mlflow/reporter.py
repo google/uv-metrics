@@ -17,17 +17,62 @@
 
 import google.cloud.pubsub_v1
 import json
+import logging
 import mlflow as mlf
 from mlflow.entities import Param, Metric, RunTag
+import numbers
 import os
+import re
 import time
 from typing import Optional, Dict, List, Union, Any
 import uv.reporter.base as b
 import uv.types as t
+import uv.util as u
 import uv.util.attachment as ua
 
 PUBSUB_PROJECT_ENV_VAR = "UV_MLFLOW_PUBSUB_PROJECT"
 PUBSUB_TOPIC_ENV_VAR = "UV_MLFLOW_PUBSUB_TOPIC"
+
+INVALID_CHAR_REPLACEMENT = '-'
+
+# mlflow restricts these strings
+_INVALID_PARAM_AND_METRIC_NAMES = re.compile('[^/\w.\- ]')
+
+
+def _truncate_key(k: str) -> str:
+  '''truncates keys for mlflow, as there are strict limits for key length'''
+  return k[:mlf.utils.validation.MAX_ENTITY_KEY_LENGTH]
+
+
+def sanitize_key(k: str) -> str:
+  '''sanitizes keys for mlflow to conform to mlflow restrictions'''
+  return _INVALID_PARAM_AND_METRIC_NAMES.sub(INVALID_CHAR_REPLACEMENT,
+                                             _truncate_key(k))
+
+
+def _sanitize_param_value(v: str):
+  '''sanitizes parameter values to conform to mlflow restrictions'''
+  return v[:mlf.utils.validation.MAX_PARAM_VAL_LENGTH]
+
+
+def _sanitize_metric_value(k: t.MetricKey, v: t.Metric) -> t.Metric:
+  '''sanitizes a metric value, if non-numeric, logs a warning and returns 0'''
+  if not isinstance(v, numbers.Number):
+    try:
+      v = float(u.to_metric(v))
+    except Exception as e:
+      logging.warning(
+          f'metric {k} has a non-numeric value {v}, logging 0 as placeholder')
+      v = 0
+  return v
+
+
+def _sanitize_metrics(
+    d: Dict[t.MetricKey, t.Metric]) -> Dict[t.MetricKey, t.Metric]:
+  '''sanitizes keys to conform to mlflow restrictions, and
+  logs a warning for non-float metric values, replacing with zeros'''
+
+  return {sanitize_key(k): _sanitize_metric_value(k, v) for k, v in d.items()}
 
 
 class MLFlowReporter(b.AbstractReporter):
@@ -57,10 +102,14 @@ class MLFlowReporter(b.AbstractReporter):
     self.report_params({k: v})
 
   def report_params(self, m: Dict[str, Union[str, Dict]]) -> None:
-    m = ua.flatten(m)
-    self._log_batch(params=[Param(k, str(v)) for k, v in m.items()])
+    flat_m = ua.flatten(m)
+    self._log_batch(params=[
+        Param(sanitize_key(k), _sanitize_param_value(str(v)))
+        for k, v in flat_m.items()
+    ])
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
+    m = _sanitize_metrics(m)
     ts = int(time.time() * 1000)
     self._log_batch(metrics=[Metric(k, v, ts, step) for k, v in m.items()])
 
@@ -121,6 +170,7 @@ class MLFlowPubsubReporter(b.AbstractReporter):
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
     ts = int(time.time() * 1000)
+    m = _sanitize_metrics(m)
     self._publisher.publish(
         self._topic,
         json.dumps({

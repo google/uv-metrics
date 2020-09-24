@@ -14,16 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numbers
+import numpy as np
 import google.cloud.pubsub_v1
 import json
 import mlflow as mlf
 from mlflow.entities import Metric
 import pytest
 import tempfile
+import tensorflow as tf
 
 import uv
 from uv.mlflow.reporter import (MLFlowReporter, MLFlowPubsubReporter,
                                 PUBSUB_PROJECT_ENV_VAR, PUBSUB_TOPIC_ENV_VAR)
+import uv.util as u
 
 
 @pytest.fixture
@@ -45,6 +49,16 @@ def mock_pubsub(monkeypatch):
       return f'projects/{project}/topics/{topic}'
 
   monkeypatch.setattr(google.cloud.pubsub_v1, 'PublisherClient', MockClient)
+
+
+# this is a simple invalid key for mlflow to test our sanitizer
+INVALID_KEY = '+' + 'x' * (mlf.utils.validation.MAX_ENTITY_KEY_LENGTH)
+SANITIZED_KEY = uv.mlflow.reporter.INVALID_CHAR_REPLACEMENT + 'x' * (
+    mlf.utils.validation.MAX_ENTITY_KEY_LENGTH - 1)
+
+INVALID_PARAM_VALUE = 'z' * (mlf.utils.validation.MAX_PARAM_VAL_LENGTH + 1)
+SANITIZED_PARAM_VALUE = INVALID_PARAM_VALUE[:mlf.utils.validation.
+                                            MAX_PARAM_VAL_LENGTH]
 
 
 def _reset_experiment():
@@ -71,7 +85,11 @@ def test_report_params(mock_pubsub, reporter):
         reporter()) as r:
       assert r is not None
 
-      params = {'a': 3, 'b': 'string_param'}
+      params = {
+          'a': 3,
+          'b': 'string_param',
+          INVALID_KEY: INVALID_PARAM_VALUE,
+      }
       r.report_params(params)
 
       assert mlf.active_run() == active_run
@@ -82,6 +100,10 @@ def test_report_params(mock_pubsub, reporter):
       assert run is not None
 
       for k, v in params.items():
+        if k == INVALID_KEY:
+          k = SANITIZED_KEY
+        if v == INVALID_PARAM_VALUE:
+          v = SANITIZED_PARAM_VALUE
         p = run.data.params
         assert k in p
         assert p[k] == str(v)
@@ -141,13 +163,21 @@ def test_report_all(mock_pubsub, reporter):
           'step': 1,
           'm': {
               'a': 3,
-              'b': 3.141
+              'b': 3.141,
+              INVALID_KEY: 1.23,
+              'c': 'xyz',
+              'd': '2.7',
+              'e': tf.constant([0.2]),
           }
       }, {
           'step': 2,
           'm': {
               'a': 6,
-              'b': 6.282
+              'b': 6.282,
+              INVALID_KEY: 2.46,
+              'c': np.ones(4),
+              'd': np.array([.5]),
+              'e': tf.constant([0.1, 0.2])
           }
       }]
 
@@ -166,6 +196,8 @@ def test_report_all(mock_pubsub, reporter):
       metric_data = {}
       # check that the metrics are in the run data
       for k, v in steps[0]['m'].items():
+        if k == INVALID_KEY:
+          k = SANITIZED_KEY
         assert k in metrics
         metric_data[k] = {
             x.step: x.value
@@ -175,6 +207,13 @@ def test_report_all(mock_pubsub, reporter):
       for s in steps:
         cur_step = s['step']
         for k, v in s['m'].items():
+          if k == INVALID_KEY:
+            k = SANITIZED_KEY
+          if not isinstance(v, numbers.Number):
+            try:
+              v = float(u.to_metric(v))
+            except:
+              v = 0
           assert metric_data[k][cur_step] == v
 
 
