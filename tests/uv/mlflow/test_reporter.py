@@ -25,8 +25,9 @@ import tempfile
 import tensorflow as tf
 
 import uv
+from uv.mlflow.reporter import (MLFlowReporter, MLFlowPubsubReporter,
+                                PUBSUB_PROJECT_ENV_VAR, PUBSUB_TOPIC_ENV_VAR)
 import uv.util as u
-from uv.mlflow.reporter import MLFlowReporter, MLFlowPubsubReporter
 
 
 @pytest.fixture
@@ -273,3 +274,26 @@ def test_report(mock_pubsub, reporter):
         cur_step = s['step']
         for k, v in s['m'].items():
           assert metric_data[k][cur_step] == v
+
+
+def test_pubsub_env(mock_pubsub, monkeypatch):
+  # make sure we assert if no valid project passed
+  monkeypatch.delenv(PUBSUB_PROJECT_ENV_VAR, raising=False)
+  with pytest.raises(ValueError):
+    r = MLFlowPubsubReporter(topic='mlflow')
+
+  # test passing project via env var to pubsub reporter
+  monkeypatch.setenv(PUBSUB_PROJECT_ENV_VAR, 'foo')
+  r = MLFlowPubsubReporter(topic='mlflow')
+
+  # make sure we assert if no valid topic passed
+  monkeypatch.delenv(PUBSUB_TOPIC_ENV_VAR, raising=False)
+  with pytest.raises(ValueError):
+    r = MLFlowPubsubReporter(project='foo')
+
+  # test passing project and topic via env vars to pubsub reporter
+  monkeypatch.setenv(PUBSUB_TOPIC_ENV_VAR, 'mlflow')
+  r = MLFlowPubsubReporter(project='foo')
+
+  # test passing both project and topic via env vars
+  r = MLFlowPubsubReporter()

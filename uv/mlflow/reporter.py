@@ -21,6 +21,7 @@ import logging
 import mlflow as mlf
 from mlflow.entities import Param, Metric, RunTag
 import numbers
+import os
 import re
 import time
 from typing import Optional, Dict, List, Union, Any
@@ -28,6 +29,9 @@ import uv.reporter.base as b
 import uv.types as t
 import uv.util as u
 import uv.util.attachment as ua
+
+PUBSUB_PROJECT_ENV_VAR = "UV_MLFLOW_PUBSUB_PROJECT"
+PUBSUB_TOPIC_ENV_VAR = "UV_MLFLOW_PUBSUB_TOPIC"
 
 INVALID_CHAR_REPLACEMENT = '-'
 
@@ -134,11 +138,26 @@ class MLFlowPubsubReporter(b.AbstractReporter):
 
   Args:
 
-  project: gcp project for pubsub
-  topic: pubsub topic for publishing metrics
+  project: gcp project for pubsub, defaults to UV_MLFLOW_PUBSUB_PROJECT
+           env var
+  topic: pubsub topic, defaults to UV_MLFLOW_PUBSUB_TOPIC env var
   """
 
-  def __init__(self, project: str, topic: str):
+  def __init__(
+      self,
+      project: Optional[str] = None,
+      topic: Optional[str] = None,
+  ):
+    project = project or os.getenv(PUBSUB_PROJECT_ENV_VAR)
+    if project is None:
+      raise ValueError(f'project must be specified or the '
+                       f'{PUBSUB_PROJECT_ENV_VAR} env var must be set')
+
+    topic = topic or os.getenv(PUBSUB_TOPIC_ENV_VAR)
+    if topic is None:
+      raise ValueError(f'topic must be specified or the '
+                       f'{PUBSUB_TOPIC_ENV_VAR} env var must be set')
+
     self._base_reporter = MLFlowReporter()
     self._publisher = google.cloud.pubsub_v1.PublisherClient()
     self._topic = self._publisher.topic_path(project, topic)
