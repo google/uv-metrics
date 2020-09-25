@@ -26,23 +26,6 @@ import pytest
 import uv.util as u
 
 
-class Wrapper():
-  """Wrapper class that has a numpy method, for testing."""
-
-  def __init__(self, x):
-    self._x = x
-
-  def numpy(self):
-    """Using this instead of importing tensorflow..."""
-    return np.float64(self._x)
-
-
-def test_to_metric():
-  x = Wrapper(100)
-  assert u.to_metric(100) == 100
-  assert u.to_metric(x) == np.float64(100)
-
-
 def test_to_serializable():
   """Check that various non-serializable things can in fact be serialized using
   this dispatch method."""
