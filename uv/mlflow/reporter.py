@@ -21,6 +21,7 @@ import logging
 import mlflow as mlf
 from mlflow.entities import Param, Metric, RunTag
 import numbers
+import numpy as np
 import os
 import re
 import time
@@ -56,21 +57,30 @@ def _sanitize_param_value(v: str):
 
 
 def _sanitize_metric_value(k: t.MetricKey, v: t.Metric) -> t.Metric:
-  '''sanitizes a metric value, if non-numeric, logs a warning and returns 0'''
+  '''sanitizes a metric value, if non-numeric, raises ValueError'''
+
+  # we support length-one numpy arrays of valid types
+  if isinstance(v, np.ndarray):
+    if len(v) != 1:
+      raise ValueError('only length-one numpy arrays are supported')
+    else:
+      v = v[0]
+
   if not isinstance(v, numbers.Number):
-    try:
-      v = float(u.to_metric(v))
-    except Exception as e:
-      logging.warning(
-          f'metric {k} has a non-numeric value {v}, logging 0 as placeholder')
-      v = 0
+    raise ValueError('metric must be an instance of numbers.Number')
+
+  try:
+    v = float(v)
+  except:
+    raise ValueError('metric must be convertible to float')
+
   return v
 
 
 def _sanitize_metrics(
     d: Dict[t.MetricKey, t.Metric]) -> Dict[t.MetricKey, t.Metric]:
   '''sanitizes keys to conform to mlflow restrictions, and
-  logs a warning for non-float metric values, replacing with zeros'''
+  raises ValueError if value type is not supported'''
 
   return {sanitize_key(k): _sanitize_metric_value(k, v) for k, v in d.items()}
 

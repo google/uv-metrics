@@ -165,9 +165,7 @@ def test_report_all(mock_pubsub, reporter):
               'a': 3,
               'b': 3.141,
               INVALID_KEY: 1.23,
-              'c': 'xyz',
-              'd': '2.7',
-              'e': tf.constant([0.2]),
+              'c': np.array([0]),
           }
       }, {
           'step': 2,
@@ -175,9 +173,7 @@ def test_report_all(mock_pubsub, reporter):
               'a': 6,
               'b': 6.282,
               INVALID_KEY: 2.46,
-              'c': np.ones(4),
-              'd': np.array([.5]),
-              'e': tf.constant([0.1, 0.2])
+              'c': np.array([4.0]),
           }
       }]
 
@@ -209,11 +205,8 @@ def test_report_all(mock_pubsub, reporter):
         for k, v in s['m'].items():
           if k == INVALID_KEY:
             k = SANITIZED_KEY
-          if not isinstance(v, numbers.Number):
-            try:
-              v = float(u.to_metric(v))
-            except:
-              v = 0
+          if isinstance(v, np.ndarray):
+            v = v[0]
           assert metric_data[k][cur_step] == v
 
 
@@ -297,3 +290,32 @@ def test_pubsub_env(mock_pubsub, monkeypatch):
 
   # test passing both project and topic via env vars
   r = MLFlowPubsubReporter()
+
+
+@pytest.mark.parametrize(
+    'reporter', [MLFlowReporter, lambda: MLFlowPubsubReporter('p', 't')])
+@pytest.mark.parametrize(
+    'value',
+    [np.array([0, 1]), 'foo',
+     complex(0), tf.constant([0.2])])
+def test_report_invalid(mock_pubsub, reporter, value):
+  with tempfile.TemporaryDirectory() as tmpdir:
+    mlf.set_tracking_uri(f'file:{tmpdir}/foo')
+    _reset_experiment()
+
+    mlflow_cfg = {
+        'experiment_name': 'foo',
+        'run_name': 'bar',
+        'artifact_location': '/foo/bar',
+    }
+
+    with uv.start_run(**mlflow_cfg) as active_run, uv.active_reporter(
+        reporter()) as r:
+      assert r is not None
+
+      steps = [{'step': 1, 'm': {'a': value,}}]
+
+      for p in steps:
+        for k, v in p['m'].items():
+          with pytest.raises(ValueError):
+            r.report(step=p['step'], k=k, v=v)
