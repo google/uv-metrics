@@ -17,13 +17,72 @@
 
 import google.cloud.pubsub_v1
 import json
+import logging
 import mlflow as mlf
 from mlflow.entities import Param, Metric, RunTag
+import numbers
+import numpy as np
+import os
+import re
 import time
 from typing import Optional, Dict, List, Union, Any
 import uv.reporter.base as b
 import uv.types as t
+import uv.util as u
 import uv.util.attachment as ua
+
+PUBSUB_PROJECT_ENV_VAR = "UV_MLFLOW_PUBSUB_PROJECT"
+PUBSUB_TOPIC_ENV_VAR = "UV_MLFLOW_PUBSUB_TOPIC"
+
+INVALID_CHAR_REPLACEMENT = '-'
+
+# mlflow restricts these strings
+_INVALID_PARAM_AND_METRIC_NAMES = re.compile('[^/\w.\- ]')
+
+
+def _truncate_key(k: str) -> str:
+  '''truncates keys for mlflow, as there are strict limits for key length'''
+  return k[:mlf.utils.validation.MAX_ENTITY_KEY_LENGTH]
+
+
+def sanitize_key(k: str) -> str:
+  '''sanitizes keys for mlflow to conform to mlflow restrictions'''
+  return _INVALID_PARAM_AND_METRIC_NAMES.sub(INVALID_CHAR_REPLACEMENT,
+                                             _truncate_key(k))
+
+
+def _sanitize_param_value(v: str):
+  '''sanitizes parameter values to conform to mlflow restrictions'''
+  return v[:mlf.utils.validation.MAX_PARAM_VAL_LENGTH]
+
+
+def _sanitize_metric_value(k: t.MetricKey, v: t.Metric) -> t.Metric:
+  '''sanitizes a metric value, if non-numeric, raises ValueError'''
+
+  # we support length-one numpy arrays of valid types
+  if isinstance(v, np.ndarray):
+    if len(v) != 1:
+      raise ValueError('only length-one numpy arrays are supported')
+    else:
+      v = v[0]
+
+  if not isinstance(v, numbers.Number):
+    raise ValueError('metric must be an instance of numbers.Number')
+
+  try:
+    v = float(v)
+  except:
+    raise ValueError('metric must be convertible to float')
+
+  return v
+
+
+def _sanitize_metrics(
+    d: Dict[t.MetricKey, t.Metric]) -> Dict[t.MetricKey, t.Metric]:
+  '''sanitizes keys to conform to mlflow restrictions, and
+  raises ValueError if value type is not supported'''
+
+  return {sanitize_key(k): _sanitize_metric_value(k, v) for k, v in d.items()}
 
 
 class MLFlowReporter(b.AbstractReporter):
@@ -53,10 +112,14 @@ class MLFlowReporter(b.AbstractReporter):
     self.report_params({k: v})
 
   def report_params(self, m: Dict[str, Union[str, Dict]]) -> None:
-    m = ua.flatten(m)
-    self._log_batch(params=[Param(k, str(v)) for k, v in m.items()])
+    flat_m = ua.flatten(m)
+    self._log_batch(params=[
+        Param(sanitize_key(k), _sanitize_param_value(str(v)))
+        for k, v in flat_m.items()
+    ])
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
+    m = _sanitize_metrics(m)
     ts = int(time.time() * 1000)
     self._log_batch(metrics=[Metric(k, v, ts, step) for k, v in m.items()])
 
@@ -85,11 +148,26 @@ class MLFlowPubsubReporter(b.AbstractReporter):
 
   Args:
 
-  project: gcp project for pubsub
-  topic: pubsub topic for publishing metrics
+  project: gcp project for pubsub, defaults to UV_MLFLOW_PUBSUB_PROJECT
+           env var
+  topic: pubsub topic, defaults to UV_MLFLOW_PUBSUB_TOPIC env var
   """
 
-  def __init__(self, project: str, topic: str):
+  def __init__(
+      self,
+      project: Optional[str] = None,
+      topic: Optional[str] = None,
+  ):
+    project = project or os.getenv(PUBSUB_PROJECT_ENV_VAR)
+    if project is None:
+      raise ValueError(f'project must be specified or the '
+                       f'{PUBSUB_PROJECT_ENV_VAR} env var must be set')
+
+    topic = topic or os.getenv(PUBSUB_TOPIC_ENV_VAR)
+    if topic is None:
+      raise ValueError(f'topic must be specified or the '
+                       f'{PUBSUB_TOPIC_ENV_VAR} env var must be set')
+
     self._base_reporter = MLFlowReporter()
     self._publisher = google.cloud.pubsub_v1.PublisherClient()
     self._topic = self._publisher.topic_path(project, topic)
@@ -102,6 +180,7 @@ class MLFlowPubsubReporter(b.AbstractReporter):
 
   def report_all(self, step: int, m: Dict[t.MetricKey, t.Metric]) -> None:
     ts = int(time.time() * 1000)
+    m = _sanitize_metrics(m)
     self._publisher.publish(
         self._topic,
         json.dumps({

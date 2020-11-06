@@ -24,15 +24,6 @@ import numpy as np
 import tqdm
 
 
-def to_metric(v: Any) -> float:
-  """Converts the incoming item into something we can log.
-  """
-  if hasattr(v, 'numpy'):
-    return v.numpy()
-
-  return v
-
-
 @singledispatch
 def to_serializable(val):
   """Used by default."""
