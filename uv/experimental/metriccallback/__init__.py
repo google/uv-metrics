@@ -13,8 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Measurement manager interface and implementations."""
+"""MetricCallback interface and implementations."""
 
-from uv.manager.impl import MeasurementManager
+from uv.experimental.metriccallback.impl import MetricCallback
 
-__all__ = ["MeasurementManager"]
+__all__ = ["MetricCallback"]

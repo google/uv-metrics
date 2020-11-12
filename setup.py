@@ -45,25 +45,29 @@ REQUIRED_PACKAGES = [
     "numpy>=1.18.0",
     "sqlalchemy",
     "tqdm>=4.42.1",
+    "google-cloud-pubsub>=1.7.0",
 ]
 
-setup(
-    name='uv-metrics',
-    version=with_versioneer(lambda v: v.get_version()),
-    cmdclass=with_versioneer(lambda v: v.get_cmdclass(), {}),
-    description='Composable metric reporters in Python.',
-    long_description=readme(),
-    long_description_content_type="text/markdown",
-    python_requires='>=3.6.0',
-    author='Sam Ritchie',
-    author_email='samritchie@google.com',
-    url='https://github.com/google/uv-metrics',
-    license='Apache-2.0',
-    packages=find_packages(exclude=('tests', 'docs')),
-    install_requires=REQUIRED_PACKAGES,
-    extras_require={
-        "tf": ["tensorflow"],
-        "tf-gpu": ["tensorflow-gpu"],
-    },
-    include_package_data=True,
-)
+setup(name='uv-metrics',
+      version=with_versioneer(lambda v: v.get_version()),
+      cmdclass=with_versioneer(lambda v: v.get_cmdclass(), {}),
+      description='Composable metric reporters in Python.',
+      long_description=readme(),
+      long_description_content_type="text/markdown",
+      python_requires='>=3.6.0',
+      author='Sam Ritchie',
+      author_email='samritchie@google.com',
+      url='https://github.com/google/uv-metrics',
+      license='Apache-2.0',
+      packages=find_packages(exclude=('tests', 'docs')),
+      install_requires=REQUIRED_PACKAGES,
+      extras_require={
+          "tf": ["tensorflow"],
+          "tf-gpu": ["tensorflow-gpu"],
+      },
+      include_package_data=True,
+      entry_points={
+          'console_scripts': [
+              'mlflow_subscriber = uv.resources.mlflow_subscriber:main',
+          ]
+      })
