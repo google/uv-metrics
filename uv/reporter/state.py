@@ -88,6 +88,14 @@ def report_params(m: Dict[str, str]) -> None:
   return get_reporter().report_params(m)
 
 
+def report_artifact(local_path: str) -> None:
+  """Accepts a path to a local file and logs this file as an artifact. Reports
+  to the globally available reporter returned by uv.get_reporter().
+
+  """
+  return get_reporter().report_artifact(local_path)
+
+
 def _ensure_non_null_project(artifact_root: Optional[str]):
   '''Ensures that the google cloud python api methods can get a non-None
   project id when the mlflow artifact root is a storage bucket. This is necessary

@@ -108,6 +108,14 @@ class MLFlowReporter(b.AbstractReporter):
                            params=params,
                            tags=tags)
 
+  def _log_artifact(self,
+                    local_path: str,
+                    run_id: Optional[str] = None) -> None:
+
+    run_id = run_id or mlf.active_run().info.run_id
+
+    self._client.log_artifact(run_id=run_id, local_path=local_path)
+
   def report_param(self, k: str, v: str) -> None:
     self.report_params({k: v})
 
@@ -125,6 +133,9 @@ class MLFlowReporter(b.AbstractReporter):
 
   def report(self, step: int, k: t.MetricKey, v: t.Metric) -> None:
     self.report_all(step=step, m={k: v})
+
+  def report_artifact(self, local_path: str) -> None:
+    self._log_artifact(local_path)
 
 
 def _metric_dict(
