@@ -41,7 +41,7 @@ REQUIRED_PACKAGES = [
     "casfs==0.1.1",
     "fs",
     "fs-gcsfs",
-    "mlflow==1.10.0",
+    "mlflow==1.23.1",
     "numpy>=1.18.0",
     "sqlalchemy",
     "tqdm>=4.42.1",
